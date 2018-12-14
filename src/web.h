@@ -21,6 +21,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <wifi.h>
 
 void setupWeb() {
   webServer.on("/all", HTTP_GET, []() {
@@ -62,7 +63,7 @@ void handleWeb() {
   static bool webServerStarted = false;
 
   // check for connection
-  if ( WiFi.status() == WL_CONNECTED ) {
+  if (apMode == true || (apMode == false && WiFi.status() == WL_CONNECTED)) {
     if (!webServerStarted) {
       // turn off the board's LED when connected to wifi
       digitalWrite(led, 1);
@@ -80,7 +81,7 @@ void handleWeb() {
     EVERY_N_MILLIS(125) {
       ledState = ledState == 0 ? 1 : 0;
       digitalWrite(led, ledState);
-      Serial.print ("N");
+      Serial.print (WiFi.localIP() + "\n");
     }
   }
 }
