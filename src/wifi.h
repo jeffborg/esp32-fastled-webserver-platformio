@@ -24,7 +24,7 @@
 
 #define HOSTNAME "ESP32-" ///< Hostname. The setup function adds the Chip ID at the end.
 
-const bool apMode = false;
+const bool apMode = true;
 
 // AP mode password
 const char WiFiAPPSK[] = "kochan";
