@@ -7,6 +7,13 @@ Control addressable LEDs with an ESP32 via a web browser over Wi-Fi.
 
 With some changes I need. To get started just open project (I'm using VS Code) and install FastLED library to using library manager.
 
+### Upload data/ to SPIFFS:
+
+```
+pio run --target buildfs # only for the 1st time
+pio run --target uploadfs
+```
+
 ## Features
 ### Currently Working:
 * [x] DemoReel100 patterns
@@ -29,6 +36,8 @@ With some changes I need. To get started just open project (I'm using VS Code) a
 
 ### Currently Lacking:
 * [ ] WebSockets for automatically refreshing/syncing web clients
+* [ ] Build assets by modern Webpack
+* [ ] More patterns
 
 ## Requirements
 
@@ -65,22 +74,11 @@ Recommended by [Adafruit NeoPixel "Best Practices"](https://learn.adafruit.com/a
 
 ### Software
 
-* [Arduino](https://www.arduino.cc/en/main/software)
-* [ESP32 Arduino Libraries & Tools](https://github.com/espressif/arduino-esp32)
-* [Arduino ESP32 filesystem uploader](https://github.com/me-no-dev/arduino-esp32fs-plugin)
+* [VS Code](https://code.visualstudio.com/download)
+* [PlatformIO](https://platformio.org/)
 
 #### Libraries
 
 * [samguyer/FastLED](https://github.com/samguyer/FastLED)
-* [ESP32 Arduino Libraries & Tools](https://github.com/espressif/arduino-esp32)
-* [ESP8266/ESP32 WebServer](https://github.com/bbx10/WebServer_tng)
 
-#### SPIFFS fix
-
-To fix an [issue with serving files from SPIFFS over the web server](https://github.com/jasoncoon/esp32-fastled-webserver/issues/1), I used Yves BAZIN's fix here: https://github.com/hpwit/lib
-
-Copy [libspiffs.a](https://github.com/jasoncoon/esp32-fastled-webserver/raw/master/libspiffs.a) to the ESP32 tools directory:
-`\Documents\Arduino\hardware\espressif\esp32\tools\sdk\lib\libspiffs.a`
-
-And copy [esp32fs.jar](https://github.com/jasoncoon/esp32-fastled-webserver/raw/master/esp32fs.jar) to the Arduino tools directory:
-`\Documents\Arduino\tools\ESP32FS\tool\esp32fs.jar`
+All other required packages are required by PlatformIO
