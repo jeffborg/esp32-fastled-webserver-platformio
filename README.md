@@ -3,6 +3,10 @@
 
 Control addressable LEDs with an ESP32 via a web browser over Wi-Fi.
 
+## This is a Platformio fork of ESP32 FastLED Web Server
+
+With some changes I need. To get started just open project (I'm using VS Code) and install FastLED library to using library manager.
+
 ## Features
 ### Currently Working:
 * [x] DemoReel100 patterns
