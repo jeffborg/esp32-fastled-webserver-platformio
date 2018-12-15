@@ -543,7 +543,7 @@ function postColor(name, value) {
     b: value.b
   };
 
-  $.post(urlBase + name + "?r=" + value.r + "&g=" + value.g + "&b=" + value.b, body, function (data) {
+  $.post(urlBase + 'fieldValue?name=' + name + "&r=" + value.r + "&g=" + value.g + "&b=" + value.b, body, function (data) {
     $("#status").html("Set " + name + ": " + data);
   })
     .fail(function (textStatus, errorThrown) {
