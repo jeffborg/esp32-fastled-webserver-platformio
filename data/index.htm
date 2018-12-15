@@ -1,37 +1,32 @@
 <html>
-
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ESP32 FastLED Web Server by Evil Genius Labs</title>
+  <title>ESP32 FastLED Web Server</title>
 
-  <!-- request CSS from internet CDN -->
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-minicolors/2.2.4/jquery.minicolors.min.css" integrity="sha256-4wnSkPYU5B4yngAlx/rEb8LdfMah4teUth4AfhGEuaY=" crossorigin="anonymous" />
+  <link rel="stylesheet" href="css/bootstrap.min.css" />
+  <link rel="stylesheet" href="css/jquery.minicolors.min.css" />
 
-  <!-- request CSS from the ESP32 web server -->
-  <!-- <link rel="stylesheet" href="css/bootstrap.min.css"> -->
-  <!-- <link rel="stylesheet" href="css/jquery.minicolors.min.css"> -->
-
-  <!-- <link rel="stylesheet" href="/css/styles.css" /> -->
-
+  <link rel="stylesheet" href="/css/styles.css" />
   <link rel="icon" href="images/atom196.png" />
 </head>
-
 <body style="padding-bottom: 70px;">
 
   <nav class="navbar navbar-default navbar-static-top" id="top" role="banner">
     <div class="container">
       <div class="navbar-header">
-        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1" aria-expanded="false">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1"
+          aria-expanded="false">
           <span class="sr-only">Toggle navigation</span>
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand" href="https://www.evilgeniuslabs.org" target="_blank"><img src="https://evilgeniuslabs.org/images/atom.svg" style="width: 24px; height: 24px;" /></a>
-        <a class="navbar-brand" href="https://www.evilgeniuslabs.org" target="_blank">Evil Genius Labs</a>
+        <a class="navbar-brand" href="https://www.evilgeniuslabs.org" target="_blank">
+          <img src="https://evilgeniuslabs.org/images/atom.svg" style="width: 24px; height: 24px;" />
+        </a>
+        <!-- <a class="navbar-brand" href="https://www.evilgeniuslabs.org" target="_blank">Evil Genius Labs</a> -->
       </div>
       <div class="collapse navbar-collapse" id="navbar-collapse-1">
         <ul class="nav navbar-nav">
@@ -52,10 +47,8 @@
   </nav>
 
   <div id="container" class="container">
-
     <form class="form-horizontal" id="form">
     </form>
-
   </div>
 
   <div id="templates" style="display: none">
@@ -93,12 +86,10 @@
       </div>
       <div class="col-sm-2">
         <div class="btn-group" role="group" aria-label="...">
-          <button type="button" class="btn btn-default btn-previous"
-                  aria-label="Previous" title="Previous">
+          <button type="button" class="btn btn-default btn-previous" aria-label="Previous" title="Previous">
             <span class="glyphicon glyphicon-chevron-left"></span>
           </button>
-          <button type="button" class="btn btn-default btn-next"
-                  aria-label="Next" title="Next">
+          <button type="button" class="btn btn-default btn-next" aria-label="Next" title="Next">
             <span class="glyphicon glyphicon-chevron-right"></span>
           </button>
         </div>
@@ -187,13 +178,13 @@
         </div>
       </div>
     </div>
-
   </div>
 
   <nav class="navbar navbar-default navbar-fixed-bottom">
     <div class="container">
       <div class="navbar-header">
-        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-2" aria-expanded="false">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-2"
+          aria-expanded="false">
           <span class="sr-only">Toggle navigation</span>
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
@@ -207,26 +198,20 @@
               <span class="glyphicon glyphicon-refresh" id="btnRefresh"></span>
             </a>
           </li>
-          <li><p class="navbar-text" id="status">Loading, please wait...</p></li>
+          <li>
+            <p class="navbar-text" id="status">Loading, please wait...</p>
+          </li>
         </ul>
       </div>
     </div>
   </nav>
 
-  <!-- request js from internet CDN -->
-  <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-minicolors/2.2.4/jquery.minicolors.min.js" integrity="sha256-XAFQ9dZ6hy8p/GRhU8h/8pMvM1etymiJLZW1CiHV3bQ=" crossorigin="anonymous"></script>
-  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/reconnecting-websocket/1.0.0/reconnecting-websocket.min.js" integrity="sha256-A4JwlcDvqO4JXpvEtvWY1RH8JAEMu5W21wP8GUXLUNs=" crossorigin="anonymous"></script> -->
-
-  <!-- request js from the ESP32 web server -->
-  <!-- <script src="js/jquery-3.1.1.min.js"></script> -->
-  <!-- <script src="js/bootstrap.min.js"></script> -->
-  <!-- <script src="js/jquery.minicolors.min.js"></script> -->
-  <!-- <script src="js/r-websocket.min.js"></script> -->
+  <script src="/js/jquery-3.1.1.min.js"></script>
+  <script src="/js/bootstrap.min.js"></script>
+  <script src="/js/jquery.minicolors.min.js"></script>
+  <script src="/js/r-websocket.min.js"></script>
 
   <script src="js/app.js"></script>
-
 </body>
 
 </html>
