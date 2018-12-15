@@ -130,6 +130,7 @@ void handleWeb()
       setupWeb();
     }
     webServer.begin();
+    webSocketsServer.loop();
   }
   else
   {
