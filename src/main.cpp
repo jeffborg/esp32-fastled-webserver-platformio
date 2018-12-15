@@ -41,7 +41,7 @@ WebServer webServer(80);
 const int led = 32;
 
 uint8_t autoplay = 1;
-uint8_t autoplayDuration = 10;
+uint8_t autoplayDuration = 60;
 unsigned long autoPlayTimeout = 0;
 
 uint8_t currentPatternIndex = 0; // Index number of which pattern is current
@@ -49,9 +49,8 @@ uint8_t currentPatternIndex = 0; // Index number of which pattern is current
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 
 uint8_t power = 1;
-uint8_t brightness = 8;
-
-uint8_t speed = 30;
+uint8_t brightness = 150;
+uint8_t speed = 20;
 
 // COOLING: How much does the air cool as it rises?
 // Less cooling = taller flames.  More cooling = shorter flames.
@@ -269,5 +268,5 @@ void loop()
   // FastLED.show();
   // insert a delay to keep the framerate modest
   // FastLED.delay(1000 / FRAMES_PER_SECOND);
-  delay(1000 / FRAMES_PER_SECOND);
+  FastLED.delay(1000 / FRAMES_PER_SECOND);
 }
