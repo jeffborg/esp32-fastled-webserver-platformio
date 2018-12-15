@@ -51,6 +51,7 @@ void setupWifi()
   if (apMode)
   {
     WiFi.mode(WIFI_AP);
+    delay(2000);
     WiFi.softAP(hostnameChar, apPassword);
     Serial.printf("Connect to Wi-Fi access point: %s\n", hostnameChar);
     Serial.println("and open http://192.168.4.1 in your browser");
@@ -60,11 +61,11 @@ void setupWifi()
   {
     WiFi.mode(WIFI_STA);
     Serial.printf("Connecting to %s\n", ssid);
-    if (String(WiFi.SSID()) != String(ssid))
-    {
-      WiFi.disconnect();
-      delay(200);
-      WiFi.begin(ssid, password);
-    }
+    // if (String(WiFi.SSID()) != String(ssid))
+    // {
+    WiFi.enableSTA(true);
+    delay(2000);
+    WiFi.begin(ssid, password);
+    // }
   }
 }
