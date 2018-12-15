@@ -27,7 +27,8 @@
 #include <Arduino.h>
 #include <FastLED.h>
 #include <WiFi.h>
-#include <WebServer.h>
+#include <ESPAsyncWebServer.h>
+#include <WebSocketsServer.h>
 #include <FS.h>
 #include <SPIFFS.h>
 #include <EEPROM.h>
@@ -36,7 +37,8 @@
 #warning "Requires FastLED 3.1.8 or later; check github for latest code."
 #endif
 
-WebServer webServer(80);
+AsyncWebServer webServer(80);
+WebSocketsServer webSocketsServer = WebSocketsServer(81);
 
 const int led = 32;
 

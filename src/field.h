@@ -31,39 +31,46 @@ const String SelectFieldType = "Select";
 const String ColorFieldType = "Color";
 const String SectionFieldType = "Section";
 
-typedef struct Field {
-  public:
-    String name;
-    String label;
-    String type;
-    uint8_t min;
-    uint8_t max;
-    FieldGetter getValue;
-    FieldGetter getOptions;
-    FieldSetter setValue;
+typedef struct Field
+{
+public:
+  String name;
+  String label;
+  String type;
+  uint8_t min;
+  uint8_t max;
+  FieldGetter getValue;
+  FieldGetter getOptions;
+  FieldSetter setValue;
 };
 
 typedef Field FieldList[];
 
-Field getField(String name, FieldList fields, uint8_t count) {
-  for (uint8_t i = 0; i < count; i++) {
+Field getField(String name, FieldList fields, uint8_t count)
+{
+  for (uint8_t i = 0; i < count; i++)
+  {
     Field field = fields[i];
-    if (field.name == name) {
+    if (field.name == name)
+    {
       return field;
     }
   }
   return Field();
 }
 
-String getFieldValue(String name, FieldList fields, uint8_t count) {
+String getFieldValue(String name, FieldList fields, uint8_t count)
+{
   Field field = getField(name, fields, count);
-  if (field.getValue) {
+  if (field.getValue)
+  {
     return field.getValue();
   }
   return String();
 }
 
-CRGB parseColor(String value) {  
+CRGB parseColor(String value)
+{
   uint8_t ri = value.indexOf(",");
   uint8_t gi = value.indexOf(",", ri + 1);
 
@@ -78,24 +85,29 @@ CRGB parseColor(String value) {
   return CRGB(r, g, b);
 }
 
-void writeFieldsToEEPROM(FieldList fields, uint8_t count) {
+void writeFieldsToEEPROM(FieldList fields, uint8_t count)
+{
   uint8_t index = 0;
 
   EEPROM.write(index, 0);
 
-  for (uint8_t i = 0; i < count; i++) {
+  for (uint8_t i = 0; i < count; i++)
+  {
     Field field = fields[i];
     if (!field.getValue && !field.setValue)
       continue;
 
     String value = field.getValue();
 
-    if (field.type == ColorFieldType) {
+    if (field.type == ColorFieldType)
+    {
       CRGB color = parseColor(value);
       EEPROM.write(index++, color.r);
       EEPROM.write(index++, color.g);
       EEPROM.write(index++, color.b);
-    } else {
+    }
+    else
+    {
       byte v = value.toInt();
       EEPROM.write(index++, v);
     }
@@ -104,38 +116,38 @@ void writeFieldsToEEPROM(FieldList fields, uint8_t count) {
   EEPROM.commit();
 }
 
-String setFieldValue(String name, String value, FieldList fields, uint8_t count) {
-  String result;
-
+String setFieldValue(String name, String value, FieldList fields, uint8_t count)
+{
   Field field = getField(name, fields, count);
-  if (field.setValue) {
-    if (field.type == ColorFieldType) {
-      String r = webServer.arg("r");
-      String g = webServer.arg("g");
-      String b = webServer.arg("b");
-      String combinedValue = r + "," + g + "," + b;
-      result = field.setValue(combinedValue);
-    } else {
-      result = field.setValue(value);
-    }
+  if (!field.setValue) {
+    return "";
   }
+  String result = field.setValue(value);
+
+  String json = "{\"name\":\"" + name + "\",\"value\":" + result + "}";
+  webSocketsServer.broadcastTXT(json);
 
   writeFieldsToEEPROM(fields, count);
 
   return result;
 }
 
-void loadFieldsFromEEPROM(FieldList fields, uint8_t count) {
+void loadFieldsFromEEPROM(FieldList fields, uint8_t count)
+{
   uint8_t byteCount = 1;
 
-  for (uint8_t i = 0; i < count; i++) {
+  for (uint8_t i = 0; i < count; i++)
+  {
     Field field = fields[i];
     if (!field.setValue)
       continue;
 
-    if (field.type == ColorFieldType) {
+    if (field.type == ColorFieldType)
+    {
       byteCount += 3;
-    } else {
+    }
+    else
+    {
       byteCount++;
     }
   }
@@ -146,53 +158,65 @@ void loadFieldsFromEEPROM(FieldList fields, uint8_t count) {
   //   return;
   // }
 
-  if (EEPROM.read(0) == 255) {
+  if (EEPROM.read(0) == 255)
+  {
     Serial.println("First run, or EEPROM erased, skipping settings load!");
     return;
   }
 
   uint8_t index = 0;
 
-  for (uint8_t i = 0; i < count; i++) {
+  for (uint8_t i = 0; i < count; i++)
+  {
     Field field = fields[i];
     if (!field.setValue)
       continue;
 
-    if (field.type == ColorFieldType) {
+    if (field.type == ColorFieldType)
+    {
       String r = String(EEPROM.read(index++));
       String g = String(EEPROM.read(index++));
       String b = String(EEPROM.read(index++));
       field.setValue(r + "," + g + "," + b);
-    } else {
+    }
+    else
+    {
       byte v = EEPROM.read(index++);
       field.setValue(String(v));
     }
   }
 }
 
-String getFieldsJson(FieldList fields, uint8_t count) {
+String getFieldsJson(FieldList fields, uint8_t count)
+{
   String json = "[";
 
-  for (uint8_t i = 0; i < count; i++) {
+  for (uint8_t i = 0; i < count; i++)
+  {
     Field field = fields[i];
 
     json += "{\"name\":\"" + field.name + "\",\"label\":\"" + field.label + "\",\"type\":\"" + field.type + "\"";
 
-    if (field.getValue) {
-      if (field.type == ColorFieldType || field.type == "String") {
+    if (field.getValue)
+    {
+      if (field.type == ColorFieldType || field.type == "String")
+      {
         json += ",\"value\":\"" + field.getValue() + "\"";
       }
-      else {
+      else
+      {
         json += ",\"value\":" + field.getValue();
       }
     }
 
-    if (field.type == NumberFieldType) {
+    if (field.type == NumberFieldType)
+    {
       json += ",\"min\":" + String(field.min);
       json += ",\"max\":" + String(field.max);
     }
 
-    if (field.getOptions) {
+    if (field.getOptions)
+    {
       json += ",\"options\":[";
       json += field.getOptions();
       json += "]";
@@ -208,4 +232,3 @@ String getFieldsJson(FieldList fields, uint8_t count) {
 
   return json;
 }
-

@@ -23,48 +23,103 @@
 */
 #include <wifi.h>
 
-void setupWeb() {
-  webServer.on("/all", HTTP_GET, []() {
-    digitalWrite(led, 0);
-    String json = getFieldsJson(fields, fieldCount);
-    webServer.send(200, "text/json", json);
-    digitalWrite(led, 1);
-  });
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
+{
+  switch (type)
+  {
+  case WStype_DISCONNECTED:
+    Serial.printf("[%u] Disconnected!\n", num);
+    break;
 
-  webServer.on("/fieldValue", HTTP_GET, []() {
-    digitalWrite(led, 0);
-    String name = webServer.arg("name");
-    String value = getFieldValue(name, fields, fieldCount);
-    webServer.send(200, "text/json", value);
-    digitalWrite(led, 1);
-  });
+  case WStype_CONNECTED:
+  {
+    IPAddress ip = webSocketsServer.remoteIP(num);
+    Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
 
-  webServer.on("/fieldValue", HTTP_POST, []() {
-    digitalWrite(led, 0);
-    String name = webServer.arg("name");
-    String value = webServer.arg("value");
-    String newValue = setFieldValue(name, value, fields, fieldCount);
-    webServer.send(200, "text/json", newValue);
-    digitalWrite(led, 1);
-  });
+    // send message to client
+    // webSocketsServer.sendTXT(num, "Connected");
+  }
+  break;
 
-  webServer.serveStatic("/", SPIFFS, "/index.htm", "max-age=86400");
-  webServer.serveStatic("/index.htm", SPIFFS, "/index.htm", "max-age=86400");
-  webServer.serveStatic("/favicon.ico", SPIFFS, "/favicon.ico", "max-age=86400");
-  webServer.serveStatic("/css/styles.css", SPIFFS, "/css/styles.css", "max-age=86400");
-  webServer.serveStatic("/js/app.js", SPIFFS, "/js/app.js", "max-age=86400");
-  webServer.serveStatic("/images/atom196.png", SPIFFS, "/images/atom196.png", "max-age=86400");
+  case WStype_TEXT:
+    Serial.printf("[%u] get Text: %s\n", num, payload);
 
-  webServer.begin();
-  Serial.println ( "HTTP server started" );
+    // send message to client
+    // webSocketsServer.sendTXT(num, "message here");
+
+    // send data to all connected clients
+    // webSocketsServer.broadcastTXT("message here");
+    break;
+
+  case WStype_BIN:
+    Serial.printf("[%u] get binary length: %u\n", num, length);
+    //  hexdump(payload, length);
+
+    // send message to client
+    // webSocketsServer.sendBIN(num, payload, lenght);
+    break;
+  }
 }
 
-void handleWeb() {
+void setupWeb()
+{
+  webServer.on("/all", HTTP_GET, [](AsyncWebServerRequest *request) {
+    digitalWrite(led, 0);
+    String json = getFieldsJson(fields, fieldCount);
+    request->send(200, "text/json", json);
+    digitalWrite(led, 1);
+  });
+
+  webServer.on("/fieldValue", HTTP_GET, [](AsyncWebServerRequest *request) {
+    digitalWrite(led, 0);
+    String name = request->getParam("name")->value();
+    String value = getFieldValue(name, fields, fieldCount);
+    request->send(200, "text/json", value);
+    digitalWrite(led, 1);
+  });
+
+  webServer.on("/fieldValue", HTTP_POST, [](AsyncWebServerRequest *request) {
+    digitalWrite(led, 0);
+    String name = request->getParam("name", true)->value();
+
+    Field field = getField(name, fields, fieldCount);
+    String value;
+    if (field.type == ColorFieldType)
+    {
+      String r = request->getParam("r", true)->value();
+      String g = request->getParam("g", true)->value();
+      String b = request->getParam("b", true)->value();
+      value = r + "," + g + "," + b;
+    }
+    else
+    {
+      value = request->getParam("value", true)->value();
+    }
+
+    String newValue = setFieldValue(name, value, fields, fieldCount);
+    request->send(200, "text/json", newValue);
+    digitalWrite(led, 1);
+  });
+
+  webServer.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm");
+
+  webServer.begin();
+  Serial.println("HTTP server started");
+
+  webSocketsServer.begin();
+  webSocketsServer.onEvent(webSocketEvent);
+  Serial.println("Web socket server started");
+}
+
+void handleWeb()
+{
   static bool webServerStarted = false;
 
   // check for connection
-  if (apMode == true || (apMode == false && WiFi.status() == WL_CONNECTED)) {
-    if (!webServerStarted) {
+  if (apMode == true || (apMode == false && WiFi.status() == WL_CONNECTED))
+  {
+    if (!webServerStarted)
+    {
       // turn off the board's LED when connected to wifi
       digitalWrite(led, 1);
       Serial.println();
@@ -74,15 +129,17 @@ void handleWeb() {
       webServerStarted = true;
       setupWeb();
     }
-    webServer.handleClient();
-  } else {
+    webServer.begin();
+  }
+  else
+  {
     // blink the board's LED while connecting to wifi
     static uint8_t ledState = 0;
-    EVERY_N_MILLIS(125) {
+    EVERY_N_MILLIS(125)
+    {
       ledState = ledState == 0 ? 1 : 0;
       digitalWrite(led, ledState);
-      Serial.print (WiFi.localIP() + "\n");
+      Serial.print(WiFi.localIP() + "\n");
     }
   }
 }
-
