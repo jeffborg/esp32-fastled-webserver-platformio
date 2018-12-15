@@ -108,7 +108,7 @@ void setupWeb()
 
   webSocketsServer.begin();
   webSocketsServer.onEvent(webSocketEvent);
-  Serial.println("Web socket server started");
+  Serial.println("WebSockets server started");
 }
 
 void handleWeb()
@@ -140,7 +140,7 @@ void handleWeb()
     {
       ledState = ledState == 0 ? 1 : 0;
       digitalWrite(led, ledState);
-      Serial.print(WiFi.localIP() + "\n");
+      Serial.print(".");
     }
   }
 }
