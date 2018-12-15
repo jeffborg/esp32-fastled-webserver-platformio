@@ -22,12 +22,9 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define HOSTNAME "ESP32-" ///< Hostname. The setup function adds the Chip ID at the end.
-
 const bool apMode = true;
 
-// AP mode password
-const char WiFiAPPSK[] = "kochan";
+#define HOSTNAME "ESP32-" ///< Hostname. The setup function adds the Chip ID at the end.
 
 void setupWifi()
 {
@@ -54,9 +51,10 @@ void setupWifi()
   if (apMode)
   {
     WiFi.mode(WIFI_AP);
-    WiFi.softAP(hostnameChar, WiFiAPPSK);
+    WiFi.softAP(hostnameChar, apPassword);
     Serial.printf("Connect to Wi-Fi access point: %s\n", hostnameChar);
     Serial.println("and open http://192.168.4.1 in your browser");
+    Serial.printf("soft AP IP: %s\n", WiFi.softAPIP());
   }
   else
   {
