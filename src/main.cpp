@@ -22,6 +22,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#define FASTLED_INTERRUPT_RETRY_COUNT 0
 #define FASTLED_ALLOW_INTERRUPTS 0
 
 #include <Arduino.h>
@@ -41,15 +42,13 @@ AsyncWebServer webServer(80);
 WebSocketsServer webSocketsServer = WebSocketsServer(81);
 
 const int led = 32;
+const int LED_BUILTIN = 2;
 
 uint8_t autoplay = 1;
 uint8_t autoplayDuration = 60;
 unsigned long autoPlayTimeout = 0;
-
 uint8_t currentPatternIndex = 0; // Index number of which pattern is current
-
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
-
 uint8_t power = 1;
 uint8_t brightness = 150;
 uint8_t speed = 20;
@@ -73,17 +72,17 @@ unsigned long paletteTimeout = 0;
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 
-#define DATA_PIN    32 // pins tested so far on the Feather ESP32: 13, 12, 27, 33, 15, 32, 14, SCL
+#define DATA_PIN 32 // pins tested so far on the Feather ESP32: 13, 12, 27, 33, 15, 32, 14, SCL
 //#define CLK_PIN   4
-#define LED_TYPE    WS2811
+#define LED_TYPE WS2811
 #define COLOR_ORDER RGB
 #define NUM_STRIPS 1
 #define NUM_LEDS_PER_STRIP 50
-#define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS
+#define NUM_LEDS NUM_LEDS_PER_STRIP *NUM_STRIPS
 CRGB leds[NUM_LEDS];
 
-#define MILLI_AMPS         2000 // IMPORTANT: set the max milli-Amps of your power supply (4A = 4000mA)
-#define FRAMES_PER_SECOND  60
+#define MILLI_AMPS 1000 // IMPORTANT: set the max milli-Amps of your power supply (4A = 4000mA)
+#define FRAMES_PER_SECOND 120
 
 // -- The core to run FastLED.show()
 #define FASTLED_SHOW_CORE 0
@@ -113,7 +112,8 @@ static TaskHandle_t userTaskHandle = 0;
 */
 void FastLEDshowESP32()
 {
-  if (userTaskHandle == 0) {
+  if (userTaskHandle == 0)
+  {
     // -- Store the handle of the current task, so that the show task can
     //    notify it when it's done
     userTaskHandle = xTaskGetCurrentTaskHandle();
@@ -122,7 +122,7 @@ void FastLEDshowESP32()
     xTaskNotifyGive(FastLEDshowTaskHandle);
 
     // -- Wait to be notified that it's done
-    const TickType_t xMaxBlockTime = pdMS_TO_TICKS( 200 );
+    const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200);
     ulTaskNotifyTake(pdTRUE, xMaxBlockTime);
     userTaskHandle = 0;
   }
@@ -134,7 +134,8 @@ void FastLEDshowESP32()
 void FastLEDshowTask(void *pvParameters)
 {
   // -- Run forever...
-  for (;;) {
+  for (;;)
+  {
     // -- Wait for the trigger
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
@@ -146,28 +147,36 @@ void FastLEDshowTask(void *pvParameters)
   }
 }
 
-void listDir(fs::FS &fs, const char * dirname, uint8_t levels) {
+void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
+{
   Serial.printf("Listing directory: %s\n", dirname);
 
   File root = fs.open(dirname);
-  if (!root) {
+  if (!root)
+  {
     Serial.println("Failed to open directory");
     return;
   }
-  if (!root.isDirectory()) {
+  if (!root.isDirectory())
+  {
     Serial.println("Not a directory");
     return;
   }
 
   File file = root.openNextFile();
-  while (file) {
-    if (file.isDirectory()) {
+  while (file)
+  {
+    if (file.isDirectory())
+    {
       Serial.print("  DIR : ");
       Serial.println(file.name());
-      if (levels) {
+      if (levels)
+      {
         listDir(fs, file.name(), levels - 1);
       }
-    } else {
+    }
+    else
+    {
       Serial.print("  FILE: ");
       Serial.print(file.name());
       Serial.print("  SIZE: ");
@@ -181,32 +190,40 @@ void nextPattern()
 {
   // add one to the current pattern number, and wrap around at the end
   currentPatternIndex = (currentPatternIndex + 1) % patternCount;
+
+  String json = "{\"name\":\"pattern\",\"value\":\"" + String(currentPatternIndex) + "\"}";
+  webSocketsServer.broadcastTXT(json);
 }
 
 void nextPalette()
 {
   currentPaletteIndex = (currentPaletteIndex + 1) % paletteCount;
   targetPalette = palettes[currentPaletteIndex];
+
+  String json = "{\"name\":\"palette\",\"value\":\"" + String(currentPaletteIndex) + "\"}";
+  webSocketsServer.broadcastTXT(json);
 }
 
-void setup() {
+void setup()
+{
   delay(5000);
   pinMode(led, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(led, 1);
 
-  //  delay(3000); // 3 second delay for recovery
   Serial.begin(115200);
 
   SPIFFS.begin();
   listDir(SPIFFS, "/", 1);
 
-//  loadFieldsFromEEPROM(fields, fieldCount);
+  // restore from memory
+  loadFieldsFromEEPROM(fields, fieldCount);
 
   setupWifi();
   setupWeb();
 
   // three-wire LEDs (WS2811, WS2812, NeoPixel)
-   FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+  FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
 
   // four-wire LEDs (APA102, DotStar)
   //FastLED.addLeds<LED_TYPE,DATA_PIN,CLK_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
@@ -222,7 +239,7 @@ void setup() {
   // FastLED.addLeds<LED_TYPE, SCL, COLOR_ORDER>(leds, 7 * NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP).setCorrection(TypicalLEDStrip);
 
   FastLED.setMaxPowerInVoltsAndMilliamps(5, MILLI_AMPS);
-  
+
   // set master brightness control
   FastLED.setBrightness(brightness);
 
@@ -240,35 +257,39 @@ void loop()
 {
   handleWeb();
 
-  if (power == 0) {
+  if (power == 0)
+  {
     fill_solid(leds, NUM_LEDS, CRGB::Black);
   }
-  else {
+  else
+  {
     // Call the current pattern function once, updating the 'leds' array
     patterns[currentPatternIndex].pattern();
 
-    EVERY_N_MILLISECONDS(40) {
+    EVERY_N_MILLISECONDS(40)
+    {
       // slowly blend the current palette to the next
       nblendPaletteTowardPalette(currentPalette, targetPalette, 8);
-      gHue++;  // slowly cycle the "base color" through the rainbow
+      gHue++; // slowly cycle the "base color" through the rainbow
     }
 
-    if (autoplay == 1 && (millis() > autoPlayTimeout)) {
+    if (autoplay == 1 && (millis() > autoPlayTimeout))
+    {
       nextPattern();
       autoPlayTimeout = millis() + (autoplayDuration * 1000);
     }
 
-    if (cyclePalettes == 1 && (millis() > paletteTimeout)) {
+    if (cyclePalettes == 1 && (millis() > paletteTimeout))
+    {
       nextPalette();
       paletteTimeout = millis() + (paletteDuration * 1000);
     }
   }
 
   // send the 'leds' array out to the actual LED strip
-  FastLEDshowESP32();
+  // FastLEDshowESP32();
 
   // FastLED.show();
   // insert a delay to keep the framerate modest
-  // FastLED.delay(1000 / FRAMES_PER_SECOND);
   FastLED.delay(1000 / FRAMES_PER_SECOND);
 }
