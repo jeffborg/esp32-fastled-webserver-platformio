@@ -23,6 +23,8 @@
 */
 #include <wifi.h>
 
+uint8_t connectTry = 0;
+
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
 {
   switch (type)
@@ -48,7 +50,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
     // webSocketsServer.sendTXT(num, "message here");
 
     // send data to all connected clients
-    // webSocketsServer.broadcastTXT("message here");
+    // webSocketsServer.broadcastTXT("someone else connected");
     break;
 
   case WStype_BIN:
@@ -64,22 +66,22 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
 void setupWeb()
 {
   webServer.on("/all", HTTP_GET, [](AsyncWebServerRequest *request) {
-    digitalWrite(led, 0);
+    digitalWrite(LED_BUILTIN, HIGH);
     String json = getFieldsJson(fields, fieldCount);
     request->send(200, "text/json", json);
-    digitalWrite(led, 1);
+    digitalWrite(LED_BUILTIN, LOW);
   });
 
   webServer.on("/fieldValue", HTTP_GET, [](AsyncWebServerRequest *request) {
-    digitalWrite(led, 0);
+    digitalWrite(LED_BUILTIN, HIGH);
     String name = request->getParam("name")->value();
     String value = getFieldValue(name, fields, fieldCount);
     request->send(200, "text/json", value);
-    digitalWrite(led, 1);
+    digitalWrite(LED_BUILTIN, LOW);
   });
 
   webServer.on("/fieldValue", HTTP_POST, [](AsyncWebServerRequest *request) {
-    digitalWrite(led, 0);
+    digitalWrite(LED_BUILTIN, HIGH);
     String name = request->getParam("name", true)->value();
 
     Field field = getField(name, fields, fieldCount);
@@ -98,7 +100,7 @@ void setupWeb()
 
     String newValue = setFieldValue(name, value, fields, fieldCount);
     request->send(200, "text/json", newValue);
-    digitalWrite(led, 1);
+    digitalWrite(LED_BUILTIN, LOW);
   });
 
   webServer.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm");
@@ -121,25 +123,32 @@ void handleWeb()
     if (!webServerStarted)
     {
       // turn off the board's LED when connected to wifi
-      digitalWrite(led, 1);
+      digitalWrite(LED_BUILTIN, HIGH);
       Serial.println();
       Serial.println("WiFi connected");
       Serial.print("IP address: ");
       Serial.println(WiFi.localIP());
       webServerStarted = true;
-      setupWeb();
+      digitalWrite(LED_BUILTIN, LOW);
     }
-    webServer.begin();
+
     webSocketsServer.loop();
   }
   else
   {
     // blink the board's LED while connecting to wifi
-    static uint8_t ledState = 0;
+    // static uint8_t ledState = 0;
     EVERY_N_MILLIS(125)
     {
-      ledState = ledState == 0 ? 1 : 0;
-      digitalWrite(led, ledState);
+      // ledState = ;
+      digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+      connectTry = connectTry + 1;
+      if (connectTry > 30)
+      {
+        Serial.println("");
+        Serial.println("could not connect to wifi, restarting...");
+        ESP.restart();
+      }
       Serial.print(".");
     }
   }
