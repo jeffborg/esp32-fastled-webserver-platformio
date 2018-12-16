@@ -172,12 +172,12 @@ function toggleCoolingSelector(pattern) {
 }
 
 function toggleTwinkleSelector(pattern) {
-  var twinklePatterns =    [
-      "rainbow twinkles",
-      "snow twinkles",
-      "cloud twinkles",
-      "incandescent twinkles"
-    ];
+  var twinklePatterns = [
+    "rainbow twinkles",
+    "snow twinkles",
+    "cloud twinkles",
+    "incandescent twinkles"
+  ];
   if (twinklePatterns.indexOf(pattern.toLowerCase()) > -1) {
     $('#form-group-twinkleSpeed').show();
     $('#form-group-section-twinkles').show();
@@ -192,7 +192,9 @@ function toggleTwinkleSelector(pattern) {
 function toggleSpeedSelector(pattern) {
   var speedPatterns = [
     "sinelon",
-    "beat"
+    "bpm",
+    "twinkles",
+    "color waves"
   ];
   if (speedPatterns.indexOf(pattern.toLowerCase()) > -1) {
     $('#form-group-speed').show();
@@ -203,11 +205,12 @@ function toggleSpeedSelector(pattern) {
 }
 
 function togglePalletteSelector(pattern) {
-  var pallettePatterns =     [
-      "confetti",
-      "sinelon",
-      "beat"
-    ];
+  var pallettePatterns = [
+    "confetti",
+    "sinelon",
+    "twinkles",
+    "beat"
+  ];
   if (pallettePatterns.indexOf(pattern.toLowerCase()) > -1) {
     $('#form-group-palette').show();
 
