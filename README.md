@@ -1,21 +1,41 @@
 # ESP32 FastLED Web Server
-**Work in progress ESP32 port of https://github.com/jasoncoon/esp8266-fastled-webserver**
+**Work in progress ESP32 port of https://github.com/jasoncoon/esp8266-fastled-webserver**...
+
+But pretty functional I think. I've fixed many bugs and added other things I need to make a powerfull Christmas Tree.
+
+The UI is a little bit changed, the PR of original project was used and there and there I fixed a little bit.
+The WebServer work in the async mode (awesome library) and all assets are stored in the ESP32 SPIFFS.
+I'm using 3x WS2811 led strips (50 leds on every).
+Original code does not really work on WIFI_AP and WIFI_STA modes, it is more designed for WIFI_STA mode. I fixed that and there is no problem. 
+Sometimes when code is uploaded do ESP32 it won't connect to the Wifi. If ESP can't connect to WiFi after 30 retries it will restart and try again.
+
+## Below is _almost_ original README with some of my changes.
 
 Control addressable LEDs with an ESP32 via a web browser over Wi-Fi.
 
-## This is a Platformio fork of ESP32 FastLED Web Server
+## This is a *PlatformIO* fork of ESP32 FastLED Web Server
 
 With some changes I need. To get started just open project (I'm using VS Code) and install FastLED library to using library manager.
 
 ### Upload data/ to SPIFFS:
 
 ```
-pio run --target buildfs # only for the 1st time
+pio run --target buildfs # only for the 1st time or when files changes
 pio run --target uploadfs
 ```
 
+Please remember that the full path for a file must be < 32 bits (it can't be `/js/a-very-very-very-very-long-filename.min.js`).
+
 ## Features
 ### Currently Working:
+
+### On this fork:
+* [x] All assets locally in SPIFFS
+* [x] Async WebServer
+* [x] WebSockets for automatically refreshing/syncing web clients working
+* [x] Automatically send WebSocket updates on pattern and pallete change
+
+#### Originally:
 * [x] DemoReel100 patterns
 * [x] [Sam's multi-core support](https://github.com/samguyer/FastLED/blob/master/examples/DemoReelESP32/DemoReelESP32.ino)
 * [x] Static web app file serving from SPIFFS
@@ -33,11 +53,13 @@ pio run --target uploadfs
    * [x] twinkle speed/density
    * [x] fire cooling/sparking
 * [x] Setting storage in EEPROM
-* [x] WebSockets for automatically refreshing/syncing web clients
 
 ### Currently Lacking:
 * [ ] Build assets by modern Webpack
 * [ ] More patterns
+
+### Known issues:
+* RGB values does not update properly but Color Changer works.
 
 ## Requirements
 
@@ -71,6 +93,7 @@ pio run --target uploadfs
 Recommended by [Adafruit NeoPixel "Best Practices"](https://learn.adafruit.com/adafruit-neopixel-uberguide/best-practices) to help protect LEDs from current onrush:
 * [1000µF Capacitor](http://www.digikey.com/product-detail/en/panasonic-electronic-components/ECA-1EM102/P5156-ND/245015)
 * [300 to 500 Ohm resistor](https://www.digikey.com/product-detail/en/stackpole-electronics-inc/CF14JT470R/CF14JT470RCT-ND/1830342)
+* sn74hct245n
 
 ### Software
 
