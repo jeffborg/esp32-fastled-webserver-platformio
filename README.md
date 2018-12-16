@@ -103,5 +103,7 @@ Recommended by [Adafruit NeoPixel "Best Practices"](https://learn.adafruit.com/a
 #### Libraries
 
 * [samguyer/FastLED](https://github.com/samguyer/FastLED)
+* [ESP Async WebServer](https://github.com/me-no-dev/ESPAsyncWebServer)
+* [WebSockets](https://github.com/Links2004/arduinoWebSockets)
 
-All other required packages are required by PlatformIO
+All other required packages are provided by PlatformIO
