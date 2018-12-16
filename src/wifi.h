@@ -28,9 +28,9 @@ const bool apMode = false;
 
 void setupWifi()
 {
-  //  // Set Hostname.
+  // Set Hostname.
   String hostname(HOSTNAME);
-  //
+
   uint64_t chipid = ESP.getEfuseMac();
   uint16_t long1 = (unsigned long)((chipid & 0xFFFF0000) >> 16);
   uint16_t long2 = (unsigned long)((chipid & 0x0000FFFF));
@@ -48,10 +48,13 @@ void setupWifi()
   // Print hostname.
   Serial.println("Hostname: " + hostname);
 
+  WiFi.persistent(false);
+  WiFi.disconnect();
+  WiFi.mode(WIFI_OFF);
+
   if (apMode)
   {
     WiFi.mode(WIFI_AP);
-    delay(2000);
     WiFi.softAP(hostnameChar, apPassword);
     Serial.printf("Connect to Wi-Fi access point: %s\n", hostnameChar);
     Serial.println("and open http://192.168.4.1 in your browser");
@@ -61,11 +64,6 @@ void setupWifi()
   {
     WiFi.mode(WIFI_STA);
     Serial.printf("Connecting to %s\n", ssid);
-    // if (String(WiFi.SSID()) != String(ssid))
-    // {
-    WiFi.enableSTA(true);
-    delay(2000);
     WiFi.begin(ssid, password);
-    // }
   }
 }
