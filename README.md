@@ -33,9 +33,9 @@ pio run --target uploadfs
    * [x] twinkle speed/density
    * [x] fire cooling/sparking
 * [x] Setting storage in EEPROM
+* [x] WebSockets for automatically refreshing/syncing web clients
 
 ### Currently Lacking:
-* [ ] WebSockets for automatically refreshing/syncing web clients
 * [ ] Build assets by modern Webpack
 * [ ] More patterns
 
