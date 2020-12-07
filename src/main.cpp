@@ -81,7 +81,7 @@ unsigned long paletteTimeout = 0;
 #define NUM_LEDS NUM_LEDS_PER_STRIP *NUM_STRIPS
 CRGB leds[NUM_LEDS];
 
-#define MILLI_AMPS 1000 // IMPORTANT: set the max milli-Amps of your power supply (4A = 4000mA)
+#define MILLI_AMPS 200 // IMPORTANT: set the max milli-Amps of your power supply (4A = 4000mA)
 #define FRAMES_PER_SECOND 120
 
 #include "patterns.h"
