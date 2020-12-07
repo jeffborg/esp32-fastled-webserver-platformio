@@ -121,6 +121,16 @@ String setAutoplay(String value) {
   return String(autoplay);
 }
 
+String getMirrored() {
+  return String(mirrored);
+}
+
+String setMirrored(String value) {
+  mirrored = value.toInt();
+  mirrored = mirrored == 0 ? 0 : 1;
+  return String(mirrored);
+}
+
 String getAutoplayDuration() {
   return String(autoplayDuration);
 }
@@ -267,6 +277,7 @@ FieldList fields = {
   { "twinklesSection",    "Twinkles",          SectionFieldType,    0,            0,  NULL,                NULL,         NULL                },
   { "twinkleSpeed",       "Twinkle Speed",     NumberFieldType,     0,            8,  getTwinkleSpeed,     NULL, setTwinkleSpeed             },
   { "twinkleDensity",     "Twinkle Density",   NumberFieldType,     0,            8,  getTwinkleDensity,   NULL, setTwinkleDensity           },
+  { "mirrored",           "Mirror LEDS",       BooleanFieldType,    0,            1,  getMirrored,         NULL,         setMirrored         },
 };
 
 uint8_t fieldCount = ARRAY_SIZE(fields);

@@ -44,6 +44,7 @@ WebSocketsServer webSocketsServer = WebSocketsServer(81);
 const int led = 32;
 // const int LED_BUILTIN = 2;
 
+uint8_t mirrored = 0;
 uint8_t autoplay = 1;
 uint8_t autoplayDuration = 60;
 unsigned long autoPlayTimeout = 0;
@@ -77,9 +78,10 @@ unsigned long paletteTimeout = 0;
 #define LED_TYPE WS2812
 #define COLOR_ORDER GRB
 #define NUM_STRIPS 1
-#define NUM_LEDS_PER_STRIP 50
-#define NUM_LEDS NUM_LEDS_PER_STRIP *NUM_STRIPS
-CRGB leds[NUM_LEDS];
+#define TOTAL_LEDS NUM_LEDS_PER_STRIP * 2
+#define NUM_LEDS_PER_STRIP 39
+#define NUM_LEDS (mirrored == 1 ? NUM_LEDS_PER_STRIP : TOTAL_LEDS)
+CRGB leds[TOTAL_LEDS];
 
 #define MILLI_AMPS 200 // IMPORTANT: set the max milli-Amps of your power supply (4A = 4000mA)
 #define FRAMES_PER_SECOND 120
@@ -220,7 +222,7 @@ void setup()
   setupWeb();
 
   // three-wire LEDs (WS2811, WS2812, NeoPixel)
-  FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+  FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, TOTAL_LEDS).setCorrection(TypicalLEDStrip);
 
   // four-wire LEDs (APA102, DotStar)
   //FastLED.addLeds<LED_TYPE,DATA_PIN,CLK_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
@@ -278,6 +280,13 @@ void loop()
 
   // send the 'leds' array out to the actual LED strip
   // FastLEDshowESP32();
+  // mirror the 1st half of leds into the 2nd half if setup
+  if (mirrored == 1) {
+    // copy the 2nd half over
+    for( u8_t i = 0; i < NUM_LEDS; i++) {
+      leds[TOTAL_LEDS - i - 1] = leds[i];
+    }
+  }
   FastLED.show();
   // insert a delay to keep the framerate modest
   // FastLED.
