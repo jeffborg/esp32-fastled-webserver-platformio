@@ -34,15 +34,15 @@
 #include <SPIFFS.h>
 #include <EEPROM.h>
 
-#if defined(FASTLED_VERSION) && (FASTLED_VERSION < 3001008)
-#warning "Requires FastLED 3.1.8 or later; check github for latest code."
+#if defined(FASTLED_VERSION) && (FASTLED_VERSION < 3003000)
+#warning "Requires FastLED 3.3 or later; check github for latest code."
 #endif
 
 AsyncWebServer webServer(80);
 WebSocketsServer webSocketsServer = WebSocketsServer(81);
 
 const int led = 32;
-const int LED_BUILTIN = 2;
+// const int LED_BUILTIN = 2;
 
 uint8_t autoplay = 1;
 uint8_t autoplayDuration = 60;
@@ -83,9 +83,6 @@ CRGB leds[NUM_LEDS];
 
 #define MILLI_AMPS 1000 // IMPORTANT: set the max milli-Amps of your power supply (4A = 4000mA)
 #define FRAMES_PER_SECOND 120
-
-// -- The core to run FastLED.show()
-#define FASTLED_SHOW_CORE 0
 
 #include "patterns.h"
 
@@ -242,13 +239,6 @@ void setup()
 
   // set master brightness control
   FastLED.setBrightness(brightness);
-
-  int core = xPortGetCoreID();
-  Serial.print("Main code running on core ");
-  Serial.println(core);
-
-  // -- Create the FastLED show task
-  xTaskCreatePinnedToCore(FastLEDshowTask, "FastLEDshowTask", 2048, NULL, 2, &FastLEDshowTaskHandle, FASTLED_SHOW_CORE);
 
   autoPlayTimeout = millis() + (autoplayDuration * 1000);
 }

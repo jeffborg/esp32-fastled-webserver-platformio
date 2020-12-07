@@ -37,7 +37,6 @@ Please remember that the full path for a file must be < 32 bits (it can't be `/j
 
 #### Originally:
 * [x] DemoReel100 patterns
-* [x] [Sam's multi-core support](https://github.com/samguyer/FastLED/blob/master/examples/DemoReelESP32/DemoReelESP32.ino)
 * [x] Static web app file serving from SPIFFS
 * [x] Ability to adjust these settings via the HTTP REST API:
    * [x] power on/off
