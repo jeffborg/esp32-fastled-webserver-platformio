@@ -90,7 +90,7 @@ CRGB leds[NUM_LEDS];
 #include "fields.h"
 
 #include "secrets.h"
-#include "wifi.h"
+#include "wifi_setup.h"
 #include "web.h"
 
 // wifi ssid and password should be added to a file in the sketch named secrets.h

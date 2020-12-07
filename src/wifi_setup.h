@@ -22,6 +22,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#pragma once
+
 const bool apMode = false;
 
 #define HOSTNAME "ESP32-" ///< Hostname. The setup function adds the Chip ID at the end.
