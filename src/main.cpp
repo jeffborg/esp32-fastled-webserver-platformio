@@ -72,10 +72,10 @@ unsigned long paletteTimeout = 0;
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 
-#define DATA_PIN 32 // pins tested so far on the Feather ESP32: 13, 12, 27, 33, 15, 32, 14, SCL
+#define DATA_PIN 23 // LED_BUILTIN // pins tested so far on the Feather ESP32: 13, 12, 27, 33, 15, 32, 14, SCL
 //#define CLK_PIN   4
-#define LED_TYPE WS2811
-#define COLOR_ORDER RGB
+#define LED_TYPE WS2812
+#define COLOR_ORDER GRB
 #define NUM_STRIPS 1
 #define NUM_LEDS_PER_STRIP 50
 #define NUM_LEDS NUM_LEDS_PER_STRIP *NUM_STRIPS
