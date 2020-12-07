@@ -1,6 +1,7 @@
 // used when hosting the site somewhere other than the ESP8266 (handy for testing without waiting forever to upload to SPIFFS)
-var address = "192.168.1.12";
-var urlBase = "http://" + address + "/";
+var address = window.location.host;
+// var urlBase = "http://" + address + "/";
+var urlBase = "/";
 
 var postColorTimer = {};
 var postValueTimer = {};
