@@ -43,6 +43,8 @@
 #include <FS.h>
 #include <EEPROM.h>
 
+#include "espnow_global.h"
+
 #if defined(FASTLED_VERSION) && (FASTLED_VERSION < 3003000)
 #warning "Requires FastLED 3.3 or later; check github for latest code."
 #endif
@@ -108,7 +110,9 @@ CRGB leds[TOTAL_LEDS];
 
 #include "secrets.h"
 #include "wifi_setup.h"
+
 #include "web.h"
+#include "espnow_setup.h"
 
 // wifi ssid and password should be added to a file in the sketch named secrets.h
 // the secrets.h file should be added to the .gitignore file and never committed or
@@ -207,7 +211,7 @@ void nextPattern()
 {
   // add one to the current pattern number, and wrap around at the end
   currentPatternIndex = (currentPatternIndex + 1) % patternCount;
-
+  updateOtherClients("pattern", String(currentPatternIndex)); // broadcast esp now
   String json = "{\"name\":\"pattern\",\"value\":\"" + String(currentPatternIndex) + "\"}";
   webSocketsServer.broadcastTXT(json);
 }
@@ -216,7 +220,7 @@ void nextPalette()
 {
   currentPaletteIndex = (currentPaletteIndex + 1) % paletteCount;
   targetPalette = palettes[currentPaletteIndex];
-
+  updateOtherClients("palette", String(currentPaletteIndex)); // broadcast esp now
   String json = "{\"name\":\"palette\",\"value\":\"" + String(currentPaletteIndex) + "\"}";
   webSocketsServer.broadcastTXT(json);
 }
@@ -237,6 +241,7 @@ void setup()
   loadFieldsFromEEPROM(fields, fieldCount);
 
   setupWifi();
+  initEspNow();
   setupWeb();
 
   // three-wire LEDs (WS2811, WS2812, NeoPixel)

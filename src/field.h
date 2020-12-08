@@ -116,7 +116,7 @@ void writeFieldsToEEPROM(FieldList fields, uint8_t count)
   EEPROM.commit();
 }
 
-String setFieldValue(String name, String value, FieldList fields, uint8_t count)
+String setFieldValue(String name, String value, FieldList fields, uint8_t count, boolean persist = true)
 {
   Field field = getField(name, fields, count);
   if (!field.setValue) {
@@ -125,9 +125,12 @@ String setFieldValue(String name, String value, FieldList fields, uint8_t count)
   String result = field.setValue(value);
 
   String json = "{\"name\":\"" + name + "\",\"value\":" + result + "}";
+  updateOtherClients(name, value); // broadcast esp now
   webSocketsServer.broadcastTXT(json);
 
-  writeFieldsToEEPROM(fields, count);
+  if (persist) {
+    writeFieldsToEEPROM(fields, count);
+  }
 
   return result;
 }
