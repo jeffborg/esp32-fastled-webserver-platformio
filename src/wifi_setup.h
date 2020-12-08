@@ -33,7 +33,11 @@ void setupWifi()
   // Set Hostname.
   String hostname(HOSTNAME);
 
+  #ifdef ESP32
   uint64_t chipid = ESP.getEfuseMac();
+  #elif ESP8266
+  uint32_t chipid = system_get_chip_id();
+  #endif
   uint16_t long1 = (unsigned long)((chipid & 0xFFFF0000) >> 16);
   uint16_t long2 = (unsigned long)((chipid & 0x0000FFFF));
   String hex = String(long1, HEX) + String(long2, HEX); // six octets
@@ -45,7 +49,9 @@ void setupWifi()
   for (uint8_t i = 0; i < hostname.length(); i++)
     hostnameChar[i] = hostname.charAt(i);
 
+  #ifdef ESP32
   WiFi.setHostname(hostnameChar);
+  #endif
 
   // Print hostname.
   Serial.println("Hostname: " + hostname);
@@ -60,7 +66,9 @@ void setupWifi()
     WiFi.softAP(hostnameChar, apPassword);
     Serial.printf("Connect to Wi-Fi access point: %s\n", hostnameChar);
     Serial.println("and open http://192.168.4.1 in your browser");
+    #ifdef ESP32
     Serial.printf("soft AP IP: %s\n", WiFi.softAPIP());
+    #endif
   }
   else
   {

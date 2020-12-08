@@ -27,11 +27,20 @@
 
 #include <Arduino.h>
 #include <FastLED.h>
+
+#ifdef ESP8266
+// #define WEBSERVER_H
+#include <ESP8266WiFi.h>
+#endif
+
+#ifdef ESP32
+#include <SPIFFS.h>
 #include <WiFi.h>
+#endif
+
 #include <ESPAsyncWebServer.h>
 #include <WebSocketsServer.h>
 #include <FS.h>
-#include <SPIFFS.h>
 #include <EEPROM.h>
 
 #if defined(FASTLED_VERSION) && (FASTLED_VERSION < 3003000)
@@ -73,7 +82,13 @@ unsigned long paletteTimeout = 0;
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 
+#ifdef ESP32
 #define DATA_PIN 23 // LED_BUILTIN // pins tested so far on the Feather ESP32: 13, 12, 27, 33, 15, 32, 14, SCL
+#endif
+#ifdef ESP8266
+#define DATA_PIN LED_BUILTIN // LED_BUILTIN // pins tested so far on the Feather ESP32: 13, 12, 27, 33, 15, 32, 14, SCL
+#endif
+
 //#define CLK_PIN   4
 #define LED_TYPE WS2812
 #define COLOR_ORDER GRB
@@ -102,6 +117,8 @@ CRGB leds[TOTAL_LEDS];
 // const char* password = "........";
 
 // -- Task handles for use in the notifications
+#ifdef ESP32
+
 static TaskHandle_t FastLEDshowTaskHandle = 0;
 static TaskHandle_t userTaskHandle = 0;
 
@@ -145,12 +162,13 @@ void FastLEDshowTask(void *pvParameters)
     xTaskNotifyGive(userTaskHandle);
   }
 }
+#endif
+
 
 void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
 {
   Serial.printf("Listing directory: %s\n", dirname);
-
-  File root = fs.open(dirname);
+  File root = fs.open(dirname, "r");
   if (!root)
   {
     Serial.println("Failed to open directory");
