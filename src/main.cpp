@@ -43,8 +43,6 @@
 #include <FS.h>
 #include <EEPROM.h>
 
-#include "espnow_global.h"
-
 #if defined(FASTLED_VERSION) && (FASTLED_VERSION < 3003000)
 #warning "Requires FastLED 3.3 or later; check github for latest code."
 #endif
@@ -105,6 +103,10 @@ CRGB leds[TOTAL_LEDS];
 
 #include "patterns.h"
 
+#include "espnow_global.h"
+
+
+#ifndef ESP_NOW_SLAVE
 #include "field.h"
 #include "fields.h"
 
@@ -112,6 +114,7 @@ CRGB leds[TOTAL_LEDS];
 #include "wifi_setup.h"
 
 #include "web.h"
+#endif
 #include "espnow_setup.h"
 
 // wifi ssid and password should be added to a file in the sketch named secrets.h
@@ -211,7 +214,7 @@ void nextPattern()
 {
   // add one to the current pattern number, and wrap around at the end
   currentPatternIndex = (currentPatternIndex + 1) % patternCount;
-  updateOtherClients("pattern", String(currentPatternIndex)); // broadcast esp now
+  updateOtherClients(); // broadcast esp now
   String json = "{\"name\":\"pattern\",\"value\":\"" + String(currentPatternIndex) + "\"}";
   webSocketsServer.broadcastTXT(json);
 }
@@ -220,7 +223,7 @@ void nextPalette()
 {
   currentPaletteIndex = (currentPaletteIndex + 1) % paletteCount;
   targetPalette = palettes[currentPaletteIndex];
-  updateOtherClients("palette", String(currentPaletteIndex)); // broadcast esp now
+  updateOtherClients(); // broadcast esp now
   String json = "{\"name\":\"palette\",\"value\":\"" + String(currentPaletteIndex) + "\"}";
   webSocketsServer.broadcastTXT(json);
 }
@@ -234,15 +237,18 @@ void setup()
 
   Serial.begin(115200);
 
+  #ifndef ESP_NOW_SLAVE
   SPIFFS.begin();
   listDir(SPIFFS, "/", 1);
 
   // restore from memory
   loadFieldsFromEEPROM(fields, fieldCount);
-
   setupWifi();
+  #endif
   initEspNow();
+  #ifndef ESP_NOW_SLAVE
   setupWeb();
+  #endif
 
   // three-wire LEDs (WS2811, WS2812, NeoPixel)
   FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, TOTAL_LEDS).setCorrection(TypicalLEDStrip);
@@ -270,7 +276,14 @@ void setup()
 
 void loop()
 {
+  #ifndef ESP_NOW_SLAVE
   handleWeb();
+  #endif
+
+  EVERY_N_MILLISECONDS(50)
+  {
+    updateOtherClients();
+  }
 
   if (power == 0)
   {
@@ -288,6 +301,8 @@ void loop()
       gHue++; // slowly cycle the "base color" through the rainbow
     }
 
+  #ifndef ESP_NOW_SLAVE
+  // if esp slave don't auto move forward
     if (autoplay == 1 && (millis() > autoPlayTimeout))
     {
       nextPattern();
@@ -299,6 +314,7 @@ void loop()
       nextPalette();
       paletteTimeout = millis() + (paletteDuration * 1000);
     }
+    #endif
   }
 
   // send the 'leds' array out to the actual LED strip

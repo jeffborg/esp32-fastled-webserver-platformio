@@ -17,9 +17,24 @@ void OnDataRecv(uint8_t * mac, uint8_t *incomingData, uint8_t len) {
   field_update_message myData;
   // String newValue = setFieldValue(name, value, fields, fieldCount);
   memcpy(&myData, incomingData, sizeof(myData));
-  setFieldValue(myData.name, myData.value, fields, fieldCount);
-  Serial.println(myData.name);
-  Serial.println(myData.value);
+
+  power = myData.power;
+  brightness = myData.brightness;
+  speed = myData.speed;
+  currentPatternIndex = myData.currentPatternIndex;
+  autoplay = myData.autoplay;
+  autoplayDuration = myData.autoplayDuration;
+  currentPaletteIndex = myData.currentPaletteIndex;
+  cyclePalettes = myData.cyclePalettes;
+  paletteDuration = myData.paletteDuration;
+  solidColor = myData.solidColor;
+  cooling = myData.cooling;
+  sparking = myData.sparking;
+  twinkleSpeed = myData.twinkleSpeed;
+  twinkleDensity = myData.twinkleDensity;
+  mirrored = myData.mirrored;
+
+  Serial.println(String(sizeof(myData)));
 }
 #endif 
 
@@ -29,22 +44,27 @@ void initEspNow() {
   Serial.print("WIFI MAC ADDRESS FOR ESPNOW: ");
   Serial.println(WiFi.macAddress());
 
+  #ifdef ESP_NOW_SLAVE
+  WiFi.mode(WIFI_STA);
+  #endif
+
   if (esp_now_init() != 0) {
     Serial.println("Error initializing ESP-NOW");
     return;
   }
       // ESP_NOW_ROLE_CONTROLLER, ESP_NOW_ROLE_SLAVE, ESP_NOW_ROLE_COMBO, ESP_NOW_ROLE_MAX
     #ifdef ESP_NOW_SLAVE
-    esp_now_set_self_role(ESP_NOW_ROLE_SLAVE);
+    // esp_now_set_self_role(ESP_NOW_ROLE_SLAVE);
     esp_now_register_recv_cb(OnDataRecv);
     #endif 
 
     #ifdef ESP_NOW_MASTER
+    // esp_now_set_self_role(ESP_NOW_ROLE_CONTROLLER);
     esp_now_register_send_cb(OnDataSent);
     esp_now_peer_info_t peerInfo;
     memcpy(peerInfo.peer_addr, broadcastAddress, 6);
-    peerInfo.channel = 0;  
-    peerInfo.encrypt = false;    
+    peerInfo.channel = 0;
+    peerInfo.encrypt = false;
     // Add peer
     if (esp_now_add_peer(&peerInfo) != ESP_OK) {
       Serial.println("Failed to add peer");
