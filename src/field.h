@@ -123,7 +123,7 @@ String setFieldValue(String name, String value, FieldList fields, uint8_t count,
     return "";
   }
   String result = field.setValue(value);
-  updateOtherClients(); // broadcast esp now as some global state got updated
+  // updateOtherClients(); // broadcast esp now as some global state got updated
 
   String json = "{\"name\":\"" + name + "\",\"value\":" + result + "}";
   webSocketsServer.broadcastTXT(json);

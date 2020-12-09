@@ -36,6 +36,7 @@
 #ifdef ESP32
 #include <SPIFFS.h>
 #include <WiFi.h>
+#include <AsyncUDP.h>
 #endif
 
 #include <ESPAsyncWebServer.h>
@@ -47,8 +48,10 @@
 #warning "Requires FastLED 3.3 or later; check github for latest code."
 #endif
 
+
 AsyncWebServer webServer(80);
 WebSocketsServer webSocketsServer = WebSocketsServer(81);
+AsyncUDP udp;
 
 const int led = 32;
 // const int LED_BUILTIN = 2;
@@ -101,12 +104,29 @@ CRGB leds[TOTAL_LEDS];
 #define MILLI_AMPS 200 // IMPORTANT: set the max milli-Amps of your power supply (4A = 4000mA)
 #define FRAMES_PER_SECOND 120
 
+
+// Structure example to receive data
+// Must match the sender structure
+// Structure example to receive data
+// Must match the sender structure
+// 39 * 2 * 3 bytes each = 234bytes
+typedef struct field_update_message {
+    uint8_t brightness; // brightness to use
+    uint8_t ledCount; // led count
+    unsigned long millis; // time message was sent
+    CRGB leds[TOTAL_LEDS];
+} field_update_message;
+
+enum response_types{ACK_PACKET, PLAYED_FRAME};
+typedef struct struct_response {
+  response_types responseType;
+  unsigned long playedFrameMillis;
+} struct_response;
+
+
+
 #include "patterns.h"
 
-#include "espnow_global.h"
-
-
-#ifndef ESP_NOW_SLAVE
 #include "field.h"
 #include "fields.h"
 
@@ -114,8 +134,6 @@ CRGB leds[TOTAL_LEDS];
 #include "wifi_setup.h"
 
 #include "web.h"
-#endif
-#include "espnow_setup.h"
 
 // wifi ssid and password should be added to a file in the sketch named secrets.h
 // the secrets.h file should be added to the .gitignore file and never committed or
@@ -214,7 +232,7 @@ void nextPattern()
 {
   // add one to the current pattern number, and wrap around at the end
   currentPatternIndex = (currentPatternIndex + 1) % patternCount;
-  updateOtherClients(); // broadcast esp now
+  // updateOtherClients(); // broadcast esp now
   String json = "{\"name\":\"pattern\",\"value\":\"" + String(currentPatternIndex) + "\"}";
   webSocketsServer.broadcastTXT(json);
 }
@@ -223,9 +241,30 @@ void nextPalette()
 {
   currentPaletteIndex = (currentPaletteIndex + 1) % paletteCount;
   targetPalette = palettes[currentPaletteIndex];
-  updateOtherClients(); // broadcast esp now
+  // updateOtherClients(); // broadcast esp now
   String json = "{\"name\":\"palette\",\"value\":\"" + String(currentPaletteIndex) + "\"}";
   webSocketsServer.broadcastTXT(json);
+}
+
+const char * udpAddress = "192.168.4.2";
+const int udpPort = 4210;
+
+void udpSendTest() {
+    // send back a reply, to the IP address and port we got the packet from
+    field_update_message myData;
+    myData.brightness = brightness;
+    myData.ledCount = TOTAL_LEDS;
+    myData.millis = millis();
+    memcpy(&myData.leds, leds, sizeof(myData.leds));
+    // AsyncUDPMessage message = AsyncUDPMessage(sizeof(myData));
+    udp.broadcastTo((uint8_t *) &myData, sizeof(myData), 4210);
+    // udp.writeTo((uint8_t *) &myData, sizeof(myData), IP_ADDR_BROADCAST , TCPIP_ADAPTER_IF_MAX);
+    // message.
+    // udp.write()
+    // udp.writeTo((uint8_t *) &myData, sizeof(myData), udpAddress, udpPort);
+    // udp.beginPacket(udpAddress, udpPort);
+    // udp.write(, );
+    // udp.endPacket();  
 }
 
 void setup()
@@ -237,18 +276,13 @@ void setup()
 
   Serial.begin(115200);
 
-  #ifndef ESP_NOW_SLAVE
   SPIFFS.begin();
   listDir(SPIFFS, "/", 1);
 
   // restore from memory
   loadFieldsFromEEPROM(fields, fieldCount);
   setupWifi();
-  #endif
-  initEspNow();
-  #ifndef ESP_NOW_SLAVE
   setupWeb();
-  #endif
 
   // three-wire LEDs (WS2811, WS2812, NeoPixel)
   FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, TOTAL_LEDS).setCorrection(TypicalLEDStrip);
@@ -276,14 +310,7 @@ void setup()
 
 void loop()
 {
-  #ifndef ESP_NOW_SLAVE
   handleWeb();
-  #endif
-
-  EVERY_N_MILLISECONDS(50)
-  {
-    updateOtherClients();
-  }
 
   if (power == 0)
   {
@@ -301,7 +328,6 @@ void loop()
       gHue++; // slowly cycle the "base color" through the rainbow
     }
 
-  #ifndef ESP_NOW_SLAVE
   // if esp slave don't auto move forward
     if (autoplay == 1 && (millis() > autoPlayTimeout))
     {
@@ -314,7 +340,6 @@ void loop()
       nextPalette();
       paletteTimeout = millis() + (paletteDuration * 1000);
     }
-    #endif
   }
 
   // send the 'leds' array out to the actual LED strip
@@ -326,6 +351,8 @@ void loop()
       leds[TOTAL_LEDS - i - 1] = leds[i];
     }
   }
+  udpSendTest();
+  // updateOtherClients();
   FastLED.show();
   // insert a delay to keep the framerate modest
   // FastLED.

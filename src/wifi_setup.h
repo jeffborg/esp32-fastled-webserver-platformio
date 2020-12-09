@@ -24,7 +24,7 @@
 
 #pragma once
 
-const bool apMode = false;
+const bool apMode = true;
 
 #define HOSTNAME "ESP32-" ///< Hostname. The setup function adds the Chip ID at the end.
 
@@ -67,7 +67,7 @@ void setupWifi()
     Serial.printf("Connect to Wi-Fi access point: %s\n", hostnameChar);
     Serial.println("and open http://192.168.4.1 in your browser");
     #ifdef ESP32
-    Serial.printf("soft AP IP: %s\n", WiFi.softAPIP());
+    Serial.printf("soft AP IP: %s\n", WiFi.gatewayIP());
     #endif
   }
   else
