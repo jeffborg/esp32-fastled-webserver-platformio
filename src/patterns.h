@@ -25,40 +25,40 @@
 #include "palettes.h"
 #include "twinkleFox.h"
 
-void rainbow()
+void rainbow(CRGB *leds, uint16_t count)
 {
   // FastLED's built-in rainbow generator
-  fill_rainbow(leds, NUM_LEDS, gHue, speed);
+  fill_rainbow(leds, count, gHue, speed);
 }
 
-void addGlitter(fract8 chanceOfGlitter)
+void addGlitter(CRGB *leds, uint16_t count, fract8 chanceOfGlitter)
 {
   if (random8() < chanceOfGlitter)
   {
-    leds[random16(NUM_LEDS)] += CRGB::White;
+    leds[random16(count)] += CRGB::White;
   }
 }
 
-void rainbowWithGlitter()
+void rainbowWithGlitter(CRGB *leds, uint16_t count)
 {
   // built-in FastLED rainbow, plus some random sparkly glitter
-  rainbow();
-  addGlitter(80);
+  rainbow(leds, count);
+  addGlitter(leds, count, 80);
 }
 
-void confetti()
+void confetti(CRGB *leds, uint16_t count)
 {
   // random colored speckles that blink in and fade smoothly
-  fadeToBlackBy(leds, NUM_LEDS, 10);
-  int pos = random16(NUM_LEDS);
+  fadeToBlackBy(leds, count, 10);
+  int pos = random16(count);
   leds[pos] += CHSV(gHue + random8(64), 200, 255);
 }
 
-void sinelon()
+void sinelon(CRGB *leds, uint16_t count)
 {
   // a colored dot sweeping back and forth, with fading trails
-  fadeToBlackBy(leds, NUM_LEDS, 20);
-  int pos = beatsin16(speed, 0, NUM_LEDS - 1);
+  fadeToBlackBy(leds, count, 20);
+  int pos = beatsin16(speed, 0, count - 1);
   static int prevpos = 0;
   CRGB color = ColorFromPalette(palettes[currentPaletteIndex], gHue, 255);
   if (pos < prevpos)
@@ -72,38 +72,38 @@ void sinelon()
   prevpos = pos;
 }
 
-void bpm()
+void bpm(CRGB *leds, uint16_t count)
 {
   // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
   uint8_t beat = beatsin8(speed, 64, 255);
   CRGBPalette16 palette = palettes[currentPaletteIndex];
-  for (int i = 0; i < NUM_LEDS; i++)
+  for (int i = 0; i < count; i++)
   {
     leds[i] = ColorFromPalette(palette, gHue + (i * 2), beat - gHue + (i * 10));
   }
 }
 
-void juggle()
+void juggle(CRGB *leds, uint16_t count)
 {
   // eight colored dots, weaving in and out of sync with each other
-  fadeToBlackBy(leds, NUM_LEDS, 20);
+  fadeToBlackBy(leds, count, 20);
   byte dothue = 0;
   for (int i = 0; i < 8; i++)
   {
-    leds[beatsin16(i + speed, 0, NUM_LEDS - 1)] |= CHSV(dothue, 200, 255);
+    leds[beatsin16(i + speed, 0, count - 1)] |= CHSV(dothue, 200, 255);
     dothue += 32;
   }
 }
 
-void showSolidColor()
+void showSolidColor(CRGB *leds, uint16_t count)
 {
-  fill_solid(leds, NUM_LEDS, solidColor);
+  fill_solid(leds, count, solidColor);
 }
 
 // based on FastLED example Fire2012WithPalette: https://github.com/FastLED/FastLED/blob/master/examples/Fire2012WithPalette/Fire2012WithPalette.ino
-void heatMap(CRGBPalette16 palette, bool up)
+void heatMap(CRGB *leds, uint16_t count, CRGBPalette16 palette, bool up)
 {
-  fill_solid(leds, NUM_LEDS, CRGB::Black);
+  fill_solid(leds, count, CRGB::Black);
 
   // Add entropy to random number generator; we use a lot of it.
   random16_add_entropy(random(256));
@@ -116,7 +116,7 @@ void heatMap(CRGBPalette16 palette, bool up)
   // Step 1.  Cool down every cell a little
   for (uint16_t i = 0; i < NUM_LEDS; i++)
   {
-    heat[i] = qsub8(heat[i], random8(0, ((cooling * 10) / NUM_LEDS) + 2));
+    heat[i] = qsub8(heat[i], random8(0, ((cooling * 10) / count) + 2));
   }
 
   // Step 2.  Heat from each cell drifts 'up' and diffuses a little
@@ -147,25 +147,25 @@ void heatMap(CRGBPalette16 palette, bool up)
     }
     else
     {
-      leds[(NUM_LEDS - 1) - j] = color;
+      leds[(count - 1) - j] = color;
     }
   }
 }
 
-void fire()
+void fire(CRGB *leds, uint16_t count)
 {
-  heatMap(HeatColors_p, true);
+  heatMap(leds, count, HeatColors_p, true);
 }
 
-void water()
+void water(CRGB *leds, uint16_t count)
 {
-  heatMap(IceColors_p, false);
+  heatMap(leds, count, IceColors_p, false);
 }
 
 // Pride2015 by Mark Kriegsman: https://gist.github.com/kriegsman/964de772d64c502760e5
 // This function draws rainbows with an ever-changing,
 // widely-varying set of parameters.
-void pride()
+void pride(CRGB *leds, uint16_t count)
 {
   static uint16_t sPseudotime = 0;
   static uint16_t sLastMillis = 0;
@@ -186,7 +186,7 @@ void pride()
   sHue16 += deltams * beatsin88(400, 5, 9);
   uint16_t brightnesstheta16 = sPseudotime;
 
-  for (uint16_t i = 0; i < NUM_LEDS; i++)
+  for (uint16_t i = 0; i < count; i++)
   {
     hue16 += hueinc16;
     uint8_t hue8 = hue16 / 256;
@@ -201,7 +201,7 @@ void pride()
     CRGB newcolor = CHSV(hue8, sat8, bri8);
 
     uint16_t pixelnumber = i;
-    pixelnumber = (NUM_LEDS - 1) - pixelnumber;
+    pixelnumber = (count - 1) - pixelnumber;
 
     nblend(leds[pixelnumber], newcolor, 64);
   }
@@ -265,12 +265,12 @@ void colorwaves(CRGB *ledarray, uint16_t numleds, CRGBPalette16 &palette)
   }
 }
 
-void colorWaves()
+void colorWaves(CRGB *leds, uint16_t count)
 {
-  colorwaves(leds, NUM_LEDS, currentPalette);
+  colorwaves(leds, count, currentPalette);
 }
 
-typedef void (*Pattern)();
+typedef void (*Pattern)(CRGB *leds, uint16_t count);
 typedef Pattern PatternList[];
 typedef struct
 {

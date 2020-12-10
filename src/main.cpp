@@ -377,7 +377,7 @@ void loop()
   else
   {
     // Call the current pattern function once, updating the 'leds' array
-    patterns[currentPatternIndex].pattern();
+    patterns[currentPatternIndex].pattern(leds, NUM_LEDS);
 
     EVERY_N_MILLISECONDS(40)
     {

@@ -160,7 +160,7 @@ CRGB computeOneTwinkle( uint32_t ms, uint8_t salt)
 //  "CalculateOneTwinkle" on each pixel.  It then displays
 //  either the twinkle color of the background color,
 //  whichever is brighter.
-void drawTwinkles()
+void drawTwinkles(CRGB *leds, uint16_t count)
 {
   // "PRNG16" is the pseudorandom number generator
   // It MUST be reset to the same starting value each time
@@ -194,7 +194,7 @@ void drawTwinkles()
 
   uint8_t backgroundBrightness = bg.getAverageLight();
 
-  for(uint16_t i = 0; i < NUM_LEDS; i++) {
+  for(uint16_t i = 0; i < count; i++) {
     CRGB& pixel = leds[i];
 
     PRNG16 = (uint16_t)(PRNG16 * 2053) + 1384; // next 'random' number
