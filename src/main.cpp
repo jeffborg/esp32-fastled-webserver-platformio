@@ -27,6 +27,7 @@
 
 #include <Arduino.h>
 #include <FastLED.h>
+#include <CircularBuffer.h>
 
 #ifdef ESP8266
 // #define WEBSERVER_H
@@ -34,7 +35,9 @@
 #endif
 
 #ifdef ESP32
-#include <SPIFFS.h>
+#define CONFIG_LITTLEFS_CACHE_SIZE 512
+#define SPIFFS LITTLEFS
+#include <LITTLEFS.h>
 #include <WiFi.h>
 #include <AsyncUDP.h>
 #endif
@@ -95,11 +98,15 @@ unsigned long paletteTimeout = 0;
 //#define CLK_PIN   4
 #define LED_TYPE WS2812
 #define COLOR_ORDER GRB
-#define NUM_STRIPS 1
-#define TOTAL_LEDS NUM_LEDS_PER_STRIP * 2
-#define NUM_LEDS_PER_STRIP 39
-#define NUM_LEDS (mirrored == 1 ? NUM_LEDS_PER_STRIP : TOTAL_LEDS)
-CRGB leds[TOTAL_LEDS];
+
+#define SKATE_LED_LENGTH 39 * 2
+
+#define BUFFER_SIZE 20
+
+// THIS is because every sketch has different counts
+#define NUM_LEDS (mirrored == 1 ? SKATE_LED_LENGTH : (SKATE_LED_LENGTH * 2))
+// animation buffer for routines to write into
+CRGB leds[SKATE_LED_LENGTH * 2];
 
 #define MILLI_AMPS 200 // IMPORTANT: set the max milli-Amps of your power supply (4A = 4000mA)
 #define FRAMES_PER_SECOND 120
@@ -114,15 +121,20 @@ typedef struct field_update_message {
     uint8_t brightness; // brightness to use
     uint8_t ledCount; // led count
     unsigned long millis; // time message was sent
-    CRGB leds[TOTAL_LEDS];
+    CRGB leds[SKATE_LED_LENGTH];
 } field_update_message;
 
 enum response_types{ACK_PACKET, PLAYED_FRAME};
 typedef struct struct_response {
   response_types responseType;
   unsigned long playedFrameMillis;
+  unsigned long localTimeIn;
+  unsigned long localTimePlayed;
 } struct_response;
 
+CircularBuffer<field_update_message, BUFFER_SIZE> buffer;
+// playback buffer just recycle the output as it's much easier
+field_update_message playback;
 
 
 #include "patterns.h"
@@ -253,9 +265,15 @@ void udpSendTest() {
     // send back a reply, to the IP address and port we got the packet from
     field_update_message myData;
     myData.brightness = brightness;
-    myData.ledCount = TOTAL_LEDS;
+    myData.ledCount = SKATE_LED_LENGTH;
     myData.millis = millis();
-    memcpy(&myData.leds, leds, sizeof(myData.leds));
+    if (mirrored) {
+      memcpy(&myData.leds, &leds[0], sizeof(myData.leds));
+    } else {
+      std::reverse_copy(&leds[SKATE_LED_LENGTH], &leds[SKATE_LED_LENGTH * 2], myData.leds);
+    }
+    // memcpy(&myData.leds, &leds[mirrored ? 0 : (NUM_LEDS_PER_STRIP * 2)], sizeof(myData.leds));
+    // buffer.push(myData);
     // AsyncUDPMessage message = AsyncUDPMessage(sizeof(myData));
     udp.broadcastTo((uint8_t *) &myData, sizeof(myData), 4210);
     // udp.writeTo((uint8_t *) &myData, sizeof(myData), IP_ADDR_BROADCAST , TCPIP_ADAPTER_IF_MAX);
@@ -267,9 +285,38 @@ void udpSendTest() {
     // udp.endPacket();  
 }
 
+unsigned long networkDelay = 0;
+uint16_t incomingCount = 0;
+unsigned long playDelay = 0;
+uint16_t playincomingCount = 0;
+
+#include "esp32-hal-cpu.h"
+
+void udpHandler(AsyncUDPPacket packet) {
+  struct_response response;
+  memcpy(&response, packet.data(), packet.available());
+  if (response.responseType == ACK_PACKET) {
+    networkDelay += millis() - response.playedFrameMillis;
+    incomingCount++;
+  } else if (response.responseType == PLAYED_FRAME) {
+    playDelay += millis() - response.playedFrameMillis;
+    playincomingCount++;
+  }
+  // packet.length()
+  EVERY_N_MILLIS(1000) {
+    Serial.printf("Delay: %d, Count: %d, Average: %d, HEAP %d\n", networkDelay, incomingCount, incomingCount > 0 ? networkDelay / incomingCount : 0, ESP.getFreeHeap());
+    Serial.printf("Delay: %d, Count: %d, Average: %d\n", playDelay, playincomingCount, playincomingCount > 0 ? playDelay / playincomingCount : 0);
+    networkDelay = 0;
+    incomingCount = 0;
+    playDelay = 0;
+    playincomingCount = 0;
+  }
+}
+
+
 void setup()
 {
-  delay(5000);
+  // delay(5000);
   pinMode(led, OUTPUT);
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(led, 1);
@@ -277,7 +324,7 @@ void setup()
   Serial.begin(115200);
 
   SPIFFS.begin();
-  listDir(SPIFFS, "/", 1);
+  // listDir(SPIFFS, "/", 1);
 
   // restore from memory
   loadFieldsFromEEPROM(fields, fieldCount);
@@ -285,7 +332,8 @@ void setup()
   setupWeb();
 
   // three-wire LEDs (WS2811, WS2812, NeoPixel)
-  FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, TOTAL_LEDS).setCorrection(TypicalLEDStrip);
+  // playback from inside a struct
+  FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(playback.leds, SKATE_LED_LENGTH).setCorrection(TypicalLEDStrip);
 
   // four-wire LEDs (APA102, DotStar)
   //FastLED.addLeds<LED_TYPE,DATA_PIN,CLK_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
@@ -306,6 +354,16 @@ void setup()
   FastLED.setBrightness(brightness);
 
   autoPlayTimeout = millis() + (autoplayDuration * 1000);
+
+  //  if(udp.listen(4210)) {
+  //       Serial.print("UDP Listening on IP: ");
+  //       Serial.println(WiFi.localIP());
+  //       udp.onPacket([](AsyncUDPPacket packet) {
+  //       }
+  if (udp.listen(4211)) {
+    Serial.print("UDP Listening on port 4211: ");
+    udp.onPacket(udpHandler);
+  }
 }
 
 void loop()
@@ -345,15 +403,29 @@ void loop()
   // send the 'leds' array out to the actual LED strip
   // FastLEDshowESP32();
   // mirror the 1st half of leds into the 2nd half if setup
-  if (mirrored == 1) {
-    // copy the 2nd half over
-    for( u8_t i = 0; i < NUM_LEDS; i++) {
-      leds[TOTAL_LEDS - i - 1] = leds[i];
-    }
-  }
-  udpSendTest();
+
+  // if (mirrored == 1) {
+  //   // copy the 2nd half over
+  //   for( u8_t i = 0; i < NUM_LEDS; i++) {
+  //     leds[SKATE_LED_LENGTH - i - 1] = leds[i];
+  //   }
+  // }
+  // EVERY_N_MILLISECONDS(1000 / 30) {
+  udpSendTest(); // buffer.push done inside here of 2nd half
+
+  field_update_message myData;
+  myData.brightness = brightness;
+  myData.ledCount = SKATE_LED_LENGTH;
+  myData.millis = millis();
+  memcpy(&myData.leds, leds, sizeof(myData.leds));
+  buffer.push(myData);
+
+  // }
   // updateOtherClients();
-  FastLED.show();
+  if (buffer.isFull()) {
+    playback = buffer.shift();
+    FastLED.show();
+  }
   // insert a delay to keep the framerate modest
   // FastLED.
   delay(1000 / FRAMES_PER_SECOND);
