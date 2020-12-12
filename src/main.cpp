@@ -108,7 +108,6 @@ unsigned long paletteTimeout = 0;
 // animation buffer for routines to write into
 CRGB leds[SKATE_LED_LENGTH * 2];
 
-#define MILLI_AMPS 200 // IMPORTANT: set the max milli-Amps of your power supply (4A = 4000mA)
 #define FRAMES_PER_SECOND 120
 
 
@@ -348,7 +347,7 @@ void setup()
   // FastLED.addLeds<LED_TYPE, 14, COLOR_ORDER>(leds, 6 * NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP).setCorrection(TypicalLEDStrip);
   // FastLED.addLeds<LED_TYPE, SCL, COLOR_ORDER>(leds, 7 * NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP).setCorrection(TypicalLEDStrip);
 
-  FastLED.setMaxPowerInVoltsAndMilliamps(5, MILLI_AMPS);
+  FastLED.setMaxPowerInVoltsAndMilliamps(5, gMaxPower * 10);
 
   // set master brightness control
   FastLED.setBrightness(brightness);

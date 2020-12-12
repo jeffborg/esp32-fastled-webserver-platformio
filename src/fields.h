@@ -42,6 +42,16 @@ String setBrightness(String value) {
   return String(brightness);
 }
 
+String getMaxPower() {
+  return String(gMaxPower);
+}
+
+String setMaxPower(String value) {
+  gMaxPower = value.toInt();
+  FastLED.setMaxPowerInVoltsAndMilliamps(5, gMaxPower * 10);
+  return String(gMaxPower);
+}
+
 String getPattern() {
   return String(currentPatternIndex);
 }
@@ -277,7 +287,10 @@ FieldList fields = {
   { "twinklesSection",    "Twinkles",          SectionFieldType,    0,            0,  NULL,                NULL,         NULL                },
   { "twinkleSpeed",       "Twinkle Speed",     NumberFieldType,     0,            8,  getTwinkleSpeed,     NULL, setTwinkleSpeed             },
   { "twinkleDensity",     "Twinkle Density",   NumberFieldType,     0,            8,  getTwinkleDensity,   NULL, setTwinkleDensity           },
+
+  { "displayDesction",    "Display Params",    SectionFieldType,    0,            0,  NULL,                NULL,         NULL                },
   { "mirrored",           "Mirror LEDS",       BooleanFieldType,    0,            1,  getMirrored,         NULL,         setMirrored         },
+  { "maxPower",           "Max POWER (x10w)",  NumberFieldType,     0,            255,getMaxPower,         NULL,         setMaxPower         },
 };
 
 uint8_t fieldCount = ARRAY_SIZE(fields);
