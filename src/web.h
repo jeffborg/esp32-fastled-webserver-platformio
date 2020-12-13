@@ -102,7 +102,7 @@ void setupWeb()
     digitalWrite(LED_BUILTIN, LOW);
   });
 
-  webServer.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm");
+  webServer.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm").setCacheControl("max-age=864000");
 
   webServer.begin();
   Serial.println("HTTP server started");
