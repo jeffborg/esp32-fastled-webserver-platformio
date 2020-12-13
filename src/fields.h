@@ -48,7 +48,7 @@ String getMaxPower() {
 
 String setMaxPower(String value) {
   gMaxPower = value.toInt();
-  FastLED.setMaxPowerInVoltsAndMilliamps(5, gMaxPower * 10);
+  FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_POWER_CONVERSION);
   return String(gMaxPower);
 }
 
@@ -290,7 +290,7 @@ FieldList fields = {
 
   { "displayDesction",    "Display Params",    SectionFieldType,    0,            0,  NULL,                NULL,         NULL                },
   { "mirrored",           "Mirror LEDS",       BooleanFieldType,    0,            1,  getMirrored,         NULL,         setMirrored         },
-  { "maxPower",           "Max POWER (x10w)",  NumberFieldType,     0,            255,getMaxPower,         NULL,         setMaxPower         },
+  { "maxPower",           "Max POWER (x20w)",  NumberFieldType,     0,            255,getMaxPower,         NULL,         setMaxPower         },
 };
 
 uint8_t fieldCount = ARRAY_SIZE(fields);

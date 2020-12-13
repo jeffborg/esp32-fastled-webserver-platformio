@@ -59,6 +59,10 @@ AsyncUDP udp;
 const int led = 32;
 // const int LED_BUILTIN = 2;
 
+uint8_t gMaxPower = 10; // 200 millamps max is 2.5 amps at 255
+#define MCU_POWER 250
+#define MAX_TOTAL_POWER 2750
+#define MAX_POWER_CONVERSION (gMaxPower * 20) < MAX_TOTAL_POWER - MCU_POWER ? (gMaxPower * 20) : MAX_TOTAL_POWER - MCU_POWER
 uint8_t mirrored = 0;
 uint8_t autoplay = 1;
 uint8_t autoplayDuration = 60;
@@ -99,7 +103,9 @@ unsigned long paletteTimeout = 0;
 #define LED_TYPE WS2812
 #define COLOR_ORDER GRB
 
-#define SKATE_LED_LENGTH 39 * 2
+#ifndef SKATE_LED_LENGTH
+#define SKATE_LED_LENGTH 10
+#endif
 
 #define BUFFER_SIZE 20
 
@@ -118,6 +124,7 @@ CRGB leds[SKATE_LED_LENGTH * 2];
 // 39 * 2 * 3 bytes each = 234bytes
 typedef struct field_update_message {
     uint8_t brightness; // brightness to use
+    uint8_t mxPower; // current power setting
     uint8_t ledCount; // led count
     unsigned long millis; // time message was sent
     CRGB leds[SKATE_LED_LENGTH];
@@ -263,6 +270,7 @@ const int udpPort = 4210;
 void udpSendTest() {
     // send back a reply, to the IP address and port we got the packet from
     field_update_message myData;
+    myData.mxPower = gMaxPower;
     myData.brightness = brightness;
     myData.ledCount = SKATE_LED_LENGTH;
     myData.millis = millis();
@@ -347,8 +355,8 @@ void setup()
   // FastLED.addLeds<LED_TYPE, 14, COLOR_ORDER>(leds, 6 * NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP).setCorrection(TypicalLEDStrip);
   // FastLED.addLeds<LED_TYPE, SCL, COLOR_ORDER>(leds, 7 * NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP).setCorrection(TypicalLEDStrip);
 
-  FastLED.setMaxPowerInVoltsAndMilliamps(5, gMaxPower * 10);
-
+  FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_POWER_CONVERSION);
+  set_max_power_indicator_LED(LED_BUILTIN);
   // set master brightness control
   FastLED.setBrightness(brightness);
 
@@ -414,6 +422,7 @@ void loop()
 
   field_update_message myData;
   myData.brightness = brightness;
+  myData.mxPower = gMaxPower;
   myData.ledCount = SKATE_LED_LENGTH;
   myData.millis = millis();
   memcpy(&myData.leds, leds, sizeof(myData.leds));
