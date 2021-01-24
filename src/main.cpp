@@ -92,11 +92,8 @@ unsigned long paletteTimeout = 0;
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 
-#ifdef ESP32
-#define DATA_PIN 23 // LED_BUILTIN // pins tested so far on the Feather ESP32: 13, 12, 27, 33, 15, 32, 14, SCL
-#endif
-#ifdef ESP8266
-#define DATA_PIN LED_BUILTIN // LED_BUILTIN // pins tested so far on the Feather ESP32: 13, 12, 27, 33, 15, 32, 14, SCL
+#ifndef ESP_DATA_PIN
+#define ESP_DATA_PIN 23 // LED_BUILTIN // pins tested so far on the Feather ESP32: 13, 12, 27, 33, 15, 32, 14, SCL
 #endif
 
 //#define CLK_PIN   4
@@ -340,10 +337,10 @@ void setup()
 
   // three-wire LEDs (WS2811, WS2812, NeoPixel)
   // playback from inside a struct
-  FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(playback.leds, SKATE_LED_LENGTH).setCorrection(TypicalLEDStrip);
+  FastLED.addLeds<LED_TYPE, ESP_DATA_PIN, COLOR_ORDER>(playback.leds, SKATE_LED_LENGTH).setCorrection(TypicalLEDStrip);
 
   // four-wire LEDs (APA102, DotStar)
-  //FastLED.addLeds<LED_TYPE,DATA_PIN,CLK_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+  //FastLED.addLeds<LED_TYPE,ESP_DATA_PIN,CLK_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
 
   // Parallel output: 13, 12, 27, 33, 15, 32, 14, SCL
   // FastLED.addLeds<LED_TYPE, 13, COLOR_ORDER>(leds, 0, NUM_LEDS_PER_STRIP).setCorrection(TypicalLEDStrip);
