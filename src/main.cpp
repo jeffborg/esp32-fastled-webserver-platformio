@@ -29,11 +29,6 @@
 #include <FastLED.h>
 #include <CircularBuffer.h>
 
-#ifdef ESP8266
-// #define WEBSERVER_H
-#include <ESP8266WiFi.h>
-#endif
-
 #ifdef ESP32
 #define CONFIG_LITTLEFS_CACHE_SIZE 512
 #define SPIFFS LITTLEFS
@@ -54,7 +49,13 @@
 
 AsyncWebServer webServer(80);
 WebSocketsServer webSocketsServer = WebSocketsServer(81);
+// #ifdef ESP32
 AsyncUDP udp;
+// #endif
+// #ifdef ESP8266
+// WiFiUDP udp;
+// WiFiUDP timeUdp;
+// #endif
 
 const int led = 32;
 // const int LED_BUILTIN = 2;
@@ -104,7 +105,14 @@ unsigned long paletteTimeout = 0;
 #define SKATE_LED_LENGTH 10
 #endif
 
-#define BUFFER_SIZE 20
+#define FRAMES_PER_SECOND 120
+
+// seems to be about 195ms behind for 39 * 2 leds
+// comment in slave unit of 150ms. Need to compare with original code on other mcu
+#define BUFFER_DELAY 150
+#define BUFFER_SIZE (BUFFER_DELAY/(1000/FRAMES_PER_SECOND)) + 10
+
+#define TIME_SYNC_UDP_LISTEN 124
 
 // THIS is because every sketch has different counts
 #define NUM_LEDS (mirrored == 1 ? SKATE_LED_LENGTH : (SKATE_LED_LENGTH * 2))
@@ -264,13 +272,13 @@ void nextPalette()
 const char * udpAddress = "192.168.4.2";
 const int udpPort = 4210;
 
-void udpSendTest() {
+void udpSendTest(unsigned long scheduledTime) {
     // send back a reply, to the IP address and port we got the packet from
     field_update_message myData;
     myData.mxPower = gMaxPower;
     myData.brightness = brightness;
     myData.ledCount = SKATE_LED_LENGTH;
-    myData.millis = millis();
+    myData.millis = scheduledTime;
     if (mirrored) {
       memcpy(&myData.leds, &leds[0], sizeof(myData.leds));
     } else {
@@ -289,34 +297,14 @@ void udpSendTest() {
     // udp.endPacket();  
 }
 
-unsigned long networkDelay = 0;
-uint16_t incomingCount = 0;
-unsigned long playDelay = 0;
-uint16_t playincomingCount = 0;
-
-#include "esp32-hal-cpu.h"
-
-void udpHandler(AsyncUDPPacket packet) {
-  struct_response response;
-  memcpy(&response, packet.data(), packet.available());
-  if (response.responseType == ACK_PACKET) {
-    networkDelay += millis() - response.playedFrameMillis;
-    incomingCount++;
-  } else if (response.responseType == PLAYED_FRAME) {
-    playDelay += millis() - response.playedFrameMillis;
-    playincomingCount++;
-  }
-  // packet.length()
-  EVERY_N_MILLIS(1000) {
-    Serial.printf("Delay: %d, Count: %d, Average: %d, HEAP %d\n", networkDelay, incomingCount, incomingCount > 0 ? networkDelay / incomingCount : 0, ESP.getFreeHeap());
-    Serial.printf("Delay: %d, Count: %d, Average: %d\n", playDelay, playincomingCount, playincomingCount > 0 ? playDelay / playincomingCount : 0);
-    networkDelay = 0;
-    incomingCount = 0;
-    playDelay = 0;
-    playincomingCount = 0;
-  }
+// udp service to get timestamp from main unit
+// #ifdef ESP32
+void udpTimeHandler(AsyncUDPPacket packet) {
+  unsigned long timeIn = millis();
+  udp.writeTo((uint8_t *)&timeIn, sizeof(timeIn), packet.remoteIP(), packet.remotePort());
+  Serial.println("GOT TIME REQUEST!!!");
 }
-
+// #endif
 
 void setup()
 {
@@ -364,25 +352,54 @@ void setup()
   //       Serial.println(WiFi.localIP());
   //       udp.onPacket([](AsyncUDPPacket packet) {
   //       }
-  if (udp.listen(4211)) {
-    Serial.print("UDP Listening on port 4211: ");
-    udp.onPacket(udpHandler);
+  // #ifdef ESP32
+  if (udp.listen(TIME_SYNC_UDP_LISTEN)) {
+    Serial.print("UDP Listening on port for time service: ");
+    udp.onPacket(udpTimeHandler);
   }
+  // #endif
+  // #ifdef ESP8266
+  // timeUdp.begin(TIME_SYNC_UDP_LISTEN);
+  // // #endif
+  // Serial.println();
+  // Serial.print( F("Heap: ") ); Serial.println(system_get_free_heap_size());
+  // Serial.print( F("Boot Vers: ") ); Serial.println(system_get_boot_version());
+  // Serial.print( F("CPU: ") ); Serial.println(system_get_cpu_freq());
+  // Serial.print( F("SDK: ") ); Serial.println(system_get_sdk_version());
+  // Serial.print( F("Chip ID: ") ); Serial.println(system_get_chip_id());
+  // Serial.print( F("Flash ID: ") ); Serial.println(spi_flash_get_id());
+  // Serial.print( F("Flash Size: ") ); Serial.println(ESP.getFlashChipRealSize());
+  // Serial.print( F("Vcc: ") ); Serial.println(ESP.getVcc());
+  // Serial.println();  
 }
 
 void loop()
 {
+  // udp
+  // #ifdef ESP8266
+  // int cb = timeUdp.parsePacket();
+  // if (cb != 0) {
+  //   unsigned long timeIn = millis();
+  //   timeUdp.beginPacket(timeUdp.remoteIP(), timeUdp.remotePort());
+  //   timeUdp.write((uint8_t *)&timeIn, sizeof(timeIn));
+  //   timeUdp.endPacket();
+  //   Serial.println("TIME PACKET!");
+  // }
+  // #endif
+  // Serial.println("loop start");
   handleWeb();
-
+  // animate at 120 FPS
+  EVERY_N_MILLIS(1000/FRAMES_PER_SECOND){
+  // Serial.println("every n ms start");
   if (power == 0)
   {
-    fill_solid(leds, NUM_LEDS, CRGB::Black);
+        fill_solid(leds, NUM_LEDS, CRGB::Black);
   }
   else
   {
     // Call the current pattern function once, updating the 'leds' array
     patterns[currentPatternIndex].pattern(leds, NUM_LEDS);
-
+      
     EVERY_N_MILLISECONDS(40)
     {
       // slowly blend the current palette to the next
@@ -404,34 +421,49 @@ void loop()
     }
   }
 
-  // send the 'leds' array out to the actual LED strip
-  // FastLEDshowESP32();
-  // mirror the 1st half of leds into the 2nd half if setup
+    // send the 'leds' array out to the actual LED strip
+    // FastLEDshowESP32();
+    // mirror the 1st half of leds into the 2nd half if setup
 
-  // if (mirrored == 1) {
-  //   // copy the 2nd half over
-  //   for( u8_t i = 0; i < NUM_LEDS; i++) {
-  //     leds[SKATE_LED_LENGTH - i - 1] = leds[i];
-  //   }
-  // }
-  // EVERY_N_MILLISECONDS(1000 / 30) {
-  udpSendTest(); // buffer.push done inside here of 2nd half
-
-  field_update_message myData;
-  myData.brightness = brightness;
-  myData.mxPower = gMaxPower;
-  myData.ledCount = SKATE_LED_LENGTH;
-  myData.millis = millis();
-  memcpy(&myData.leds, leds, sizeof(myData.leds));
-  buffer.push(myData);
-
-  // }
-  // updateOtherClients();
-  if (buffer.isFull()) {
-    playback = buffer.shift();
-    FastLED.show();
+    // if (mirrored == 1) {
+    //   // copy the 2nd half over
+    //   for( u8_t i = 0; i < NUM_LEDS; i++) {
+    //     leds[SKATE_LED_LENGTH - i - 1] = leds[i];
+    //   }
+    // }
+    // EVERY_N_MILLISECONDS(1000 / 30) {
+    // make sure both packets have same scheduled time
+    ulong scheduledTime = millis() + BUFFER_DELAY;
+    field_update_message myData;
+    myData.brightness = brightness;
+    myData.mxPower = gMaxPower;
+    myData.ledCount = SKATE_LED_LENGTH;
+    myData.millis = scheduledTime;
+    // Serial.println("have mydata");
+    memcpy(&myData.leds, leds, sizeof(myData.leds));
+    // Serial.println("after memcpy");
+    // in case bugger is too full drop an item from it
+    if (!buffer.isFull()) {
+      // Serial.println("adding to buffer");
+      buffer.push(myData);
+    }
+    // Serial.println("every n ms end");
+    udpSendTest(scheduledTime); // buffer.push done inside here of 2nd half
+    // delay(10);
   }
-  // insert a delay to keep the framerate modest
-  // FastLED.
-  delay(1000 / FRAMES_PER_SECOND);
+
+  // check buffer for next scheduled packet and then animate if ready
+
+  if (!buffer.isEmpty()) {
+    if (buffer.first().millis < millis()) {
+      // frame scheduled for playback
+      playback = buffer.shift();
+      FastLED.show(); 
+      EVERY_N_MILLIS(1000) {
+        Serial.print(F("FPS:")); Serial.println(FastLED.getFPS());
+      }
+    }
+  }
+  // run loop at 250fps?
+  // delay(4);
 }
