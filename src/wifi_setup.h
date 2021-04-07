@@ -45,6 +45,8 @@ void setupWifi()
   {
     WiFi.mode(WIFI_AP);
     WiFi.softAP(hostnameChar, apPassword);
+    uint8_t val = 0;
+    tcpip_adapter_dhcps_option(TCPIP_ADAPTER_OP_SET, TCPIP_ADAPTER_ROUTER_SOLICITATION_ADDRESS, &val, sizeof(dhcps_offer_t));
     Serial.printf("Connect to Wi-Fi access point: %s\n", hostnameChar);
     Serial.println("and open http://192.168.4.1 in your browser");
     #ifdef ESP32
