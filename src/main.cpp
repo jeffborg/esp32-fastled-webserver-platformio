@@ -448,7 +448,9 @@ void loop()
       buffer.push(myData);
     }
     // Serial.println("every n ms end");
+    #ifndef DISABLE_UDP
     udpSendTest(scheduledTime); // buffer.push done inside here of 2nd half
+    #endif
     // delay(10);
   }
 
